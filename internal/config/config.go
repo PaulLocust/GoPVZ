@@ -19,7 +19,7 @@ type Database struct {
 	User     string `yaml:"user" env-default:"user"`
 	Password string `yaml:"password"`
 	Name     string `yaml:"name" env-default:"postgres"`
-	Port     string `yaml:"port" env-default:"5432"`
+	Port     int    `yaml:"port" env-default:"5432"`
 	SSLMode  string `yaml:"ssl_mode" env-default:"disable"`
 }
 

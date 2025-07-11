@@ -2,6 +2,7 @@ package app
 
 import (
 	"GoPVZ/internal/config"
+	"GoPVZ/internal/database/postgres"
 	"GoPVZ/internal/lib/handler/slogpretty"
 	"log/slog"
 	"os"
@@ -20,6 +21,8 @@ func Run() {
 
 	log.Info("starting application", slog.Any("config", cfg))
 
+	postgres.ConnectToPostgresDB(cfg)
+	log.Info("Connected to database", slog.String("dbname", cfg.DB.Name))
 }
 
 func setupLogger(env string) *slog.Logger {
