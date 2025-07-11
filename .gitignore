@@ -26,6 +26,9 @@ go.work.sum
 
 # env file
 .env
+local.yaml
+Dockerfile
+docker-compose.yaml
 
 # Editor/IDE
 # .idea/
