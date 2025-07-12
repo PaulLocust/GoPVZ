@@ -29,6 +29,8 @@ go.work.sum
 local.yaml
 Dockerfile
 docker-compose.yaml
+scripts
+local
 
 # Editor/IDE
 # .idea/
