@@ -1,0 +1,183 @@
+basePath: /
+definitions:
+  handlers.DummyLoginRequest:
+    properties:
+      role:
+        example: moderator
+        type: string
+      user_id:
+        example: "12345"
+        type: string
+    type: object
+  handlers.DummyLoginResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handlers.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: secret
+        type: string
+    type: object
+  handlers.LoginResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: strongpassword123
+        type: string
+      role:
+        example: employee
+        type: string
+    type: object
+  handlers.RegisterResponse:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: uuid-or-id
+        type: string
+      role:
+        example: employee
+        type: string
+    type: object
+  helpers.ErrorResponse:
+    properties:
+      message:
+        example: string
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис для управления ПВЗ и приемкой товаров
+  title: backend service
+  version: 1.0.0
+paths:
+  /dummyLogin:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные для входа (role и user_id)
+        in: body
+        name: dummyLoginRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.DummyLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная генерация токена
+          schema:
+            $ref: '#/definitions/handlers.DummyLoginResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "405":
+          description: Метод не разрешён
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+      summary: Генерация JWT токена для тестового входа
+      tags:
+      - auth
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: loginRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "401":
+          description: Неверный email или пароль
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "405":
+          description: Метод не разрешён
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+      summary: Авторизация пользователя
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: registerRequest
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Пользователь успешно зарегистрирован
+          schema:
+            $ref: '#/definitions/handlers.RegisterResponse'
+        "400":
+          description: Некорректный запрос или валидация
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "405":
+          description: Метод не разрешён
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "409":
+          description: Email уже зарегистрирован
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
+securityDefinitions:
+  bearerAuth:
+    description: JWT авторизация с Bearer схемой
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

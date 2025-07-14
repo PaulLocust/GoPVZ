@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"GoPVZ/internal/lib/sl"
+	"GoPVZ/internal/transport/rest/helpers"
 	"GoPVZ/internal/transport/rest/jwt_gen"
 	"database/sql"
 	"encoding/json"
@@ -13,36 +14,47 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type LoginRequest struct {
+	Email    string `json:"email" example:"user@example.com"`
+	Password string `json:"password" example:"secret"`
 }
 
-type loginResponse struct {
-	Token string `json:"token"`
+type LoginResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
-
+// LoginHandler godoc
+// @Summary Авторизация пользователя
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param loginRequest body LoginRequest true "Данные для входа"
+// @Success 200 {object} LoginResponse "Успешная авторизация"
+// @Failure 400 {object} helpers.ErrorResponse "Неверный запрос"
+// @Failure 401 {object} helpers.ErrorResponse "Неверный email или пароль"
+// @Failure 405 {object} helpers.ErrorResponse "Метод не разрешён"
+// @Failure 500 {object} helpers.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /login [post]
 func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			helpers.WriteJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		var req loginRequest
+		var req LoginRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			helpers.WriteJSONError(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
 		req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 		if req.Email == "" || req.Password == "" {
-			http.Error(w, "email and password are required", http.StatusBadRequest)
+			helpers.WriteJSONError(w, "email and password are required", http.StatusBadRequest)
 			return
 		}
 
@@ -50,11 +62,11 @@ func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1 AND deleted_at IS NULL)`, req.Email).Scan(&exists)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "database error1", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)
 			return
 		}
 		if !exists {
-			http.Error(w, "email is not registered", http.StatusConflict)
+			helpers.WriteJSONError(w, "invalid email", http.StatusUnauthorized)
 			return
 		}
 
@@ -64,7 +76,7 @@ func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		err = DBConn.QueryRow(`SELECT id, password_hash, role FROM users WHERE email=$1 AND deleted_at IS NULL`, req.Email).Scan(&id, &password_hash, &role)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "database error2", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)
 			return
 		}
 
@@ -72,21 +84,21 @@ func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-				http.Error(w, "invalid password", http.StatusUnauthorized) // 401
+				helpers.WriteJSONError(w, "invalid password", http.StatusUnauthorized) // 401
 				return
 			}
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		token, err := jwt_gen.GenerateJWT(role, id)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "cannot generate token", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "cannot generate token", http.StatusInternalServerError)
 			return
 		}
 
-		resp := loginResponse{Token: token}
+		resp := LoginResponse{Token: token}
 		w.Header().Set("Content-Type", "application/json")
 
 		json.NewEncoder(w).Encode(resp)

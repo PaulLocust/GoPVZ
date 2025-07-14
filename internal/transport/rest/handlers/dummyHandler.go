@@ -2,60 +2,67 @@ package handlers
 
 import (
 	"GoPVZ/internal/lib/sl"
+	"GoPVZ/internal/transport/rest/helpers"
 	"GoPVZ/internal/transport/rest/jwt_gen"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 )
 
-// TODO: 1.Авторизация пользователей /dummyLogin
-type dummyAuthRequest struct {
-	Role   string `json:"role"`
-	UserID string `json:"user_id"`
+type DummyLoginRequest struct {
+	Role   string `json:"role" example:"moderator"`
+	UserID string `json:"user_id" example:"12345"`
 }
 
-type dummyAuthResponse struct {
-	Token string `json:"token"`
+type DummyLoginResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
+// DummyLoginHandler godoc
+// @Summary Генерация JWT токена для тестового входа
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param dummyLoginRequest body DummyLoginRequest true "Данные для входа (role и user_id)"
+// @Success 200 {object} DummyLoginResponse "Успешная генерация токена"
+// @Failure 400 {object} helpers.ErrorResponse "Некорректный запрос"
+// @Failure 405 {object} helpers.ErrorResponse "Метод не разрешён"
+// @Failure 500 {object} helpers.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /dummyLogin [post]
 func DummyLoginHandler(log *slog.Logger) http.HandlerFunc {
-
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			helpers.WriteJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		var req dummyAuthRequest
+		var req DummyLoginRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			log.Error("error message", sl.Err(err))
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			log.Error("error decoding request body", sl.Err(err))
+			helpers.WriteJSONError(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
-		// валидация роли
 		allowedRoles := map[string]bool{
 			"moderator": true,
 			"employee":  true,
 		}
 		if !allowedRoles[req.Role] {
-			http.Error(w, "invalid role", http.StatusBadRequest)
+			helpers.WriteJSONError(w, "invalid role", http.StatusBadRequest)
 			return
 		}
 
 		token, err := jwt_gen.GenerateJWT(req.Role, req.UserID)
 		if err != nil {
-			log.Error("error message", sl.Err(err))
-			http.Error(w, "cannot generate token", http.StatusInternalServerError)
+			log.Error("error generating token", sl.Err(err))
+			helpers.WriteJSONError(w, "cannot generate token", http.StatusInternalServerError)
 			return
 		}
 
-		resp := dummyAuthResponse{Token: token}
+		resp := DummyLoginResponse{Token: token}
 		w.Header().Set("Content-Type", "application/json")
-
 		json.NewEncoder(w).Encode(resp)
 	}
 }

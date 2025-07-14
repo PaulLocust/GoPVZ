@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"GoPVZ/internal/lib/sl"
+	"GoPVZ/internal/transport/rest/helpers"
 	"database/sql"
 	"encoding/json"
 	"log/slog"
@@ -11,44 +12,56 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type registerRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"` // employee или moderator
+type RegisterRequest struct {
+	Email    string `json:"email" example:"user@example.com"`
+	Password string `json:"password" example:"strongpassword123"`
+	Role     string `json:"role" example:"employee"`
 }
 
-type registerResponse struct {
-	Id    string `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+type RegisterResponse struct {
+	Id    string `json:"id" example:"uuid-or-id"`
+	Email string `json:"email" example:"user@example.com"`
+	Role  string `json:"role" example:"employee"`
 }
 
+// RegisterHandler godoc
+// @Summary Регистрация нового пользователя
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param registerRequest body RegisterRequest true "Данные для регистрации"
+// @Success 201 {object} RegisterResponse "Пользователь успешно зарегистрирован"
+// @Failure 400 {object} helpers.ErrorResponse "Некорректный запрос или валидация"
+// @Failure 405 {object} helpers.ErrorResponse "Метод не разрешён"
+// @Failure 409 {object} helpers.ErrorResponse "Email уже зарегистрирован"
+// @Failure 500 {object} helpers.ErrorResponse "Ошибка сервера"
+// @Router /register [post]
 func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			helpers.WriteJSONError(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		var req registerRequest
+		var req RegisterRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			helpers.WriteJSONError(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
 		req.Email = strings.TrimSpace(strings.ToLower(req.Email))
 		if req.Email == "" || req.Password == "" || req.Role == "" {
-			http.Error(w, "email, password and role are required", http.StatusBadRequest)
+			helpers.WriteJSONError(w, "email, password and role are required", http.StatusBadRequest)
 			return
 		}
 
 		allowedRoles := map[string]bool{"employee": true, "moderator": true}
 		if !allowedRoles[req.Role] {
-			http.Error(w, "invalid role", http.StatusBadRequest)
+			helpers.WriteJSONError(w, "invalid role", http.StatusBadRequest)
 			return
 		}
 
@@ -57,11 +70,11 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1 AND deleted_at IS NULL)`, req.Email).Scan(&exists)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "database error", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)
 			return
 		}
 		if exists {
-			http.Error(w, "email already registered", http.StatusConflict)
+			helpers.WriteJSONError(w, "email already registered", http.StatusConflict)
 			return
 		}
 
@@ -69,7 +82,7 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "failed to hash password", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "failed to hash password", http.StatusInternalServerError)
 			return
 		}
 
@@ -82,11 +95,11 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
         `, req.Email, string(hashedPassword), req.Role).Scan(&userID)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
-			http.Error(w, "failed to create user", http.StatusInternalServerError)
+			helpers.WriteJSONError(w, "failed to create user", http.StatusInternalServerError)
 			return
 		}
 
-		resp := registerResponse{Id: userID, Email: req.Email, Role: req.Role}
+		resp := RegisterResponse{Id: userID, Email: req.Email, Role: req.Role}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated) // 201
 

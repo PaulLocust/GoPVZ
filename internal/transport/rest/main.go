@@ -1,3 +1,15 @@
+// Package rest GoPVZ REST API
+//
+// @title backend service
+// @version 1.0.0
+// @description Сервис для управления ПВЗ и приемкой товаров
+// @host localhost:8080
+// @BasePath /
+//
+// @securityDefinitions.apikey bearerAuth
+// @in header
+// @name Authorization
+// @description JWT авторизация с Bearer схемой
 package rest
 
 import (
@@ -7,6 +19,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	httpSwagger "github.com/swaggo/http-swagger"
+	_ "GoPVZ/internal/transport/rest/docs"
 )
 
 func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
@@ -20,6 +34,8 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 	mux.HandleFunc("/dummyLogin", handlers.DummyLoginHandler(log))
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
 	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
+
+	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.REST.Port), mux)
 	if err != nil {
