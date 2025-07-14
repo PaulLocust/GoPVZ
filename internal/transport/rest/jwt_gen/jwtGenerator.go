@@ -9,7 +9,7 @@ import (
 
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
-func GenerateJWT(role string, userID int) (string, error) {
+func GenerateJWT(role string, userID string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,                                // Уникальный ID пользователя
 		"role":    role,                                  // "employee" или "moderator"

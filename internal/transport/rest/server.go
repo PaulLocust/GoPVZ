@@ -19,6 +19,7 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 
 	mux.HandleFunc("/dummyLogin", handlers.DummyLoginHandler(log))
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
+	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.REST.Port), mux)
 	if err != nil {

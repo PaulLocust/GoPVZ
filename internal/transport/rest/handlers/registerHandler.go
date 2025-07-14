@@ -17,7 +17,14 @@ type registerRequest struct {
 	Role     string `json:"role"` // employee или moderator
 }
 
+type registerResponse struct {
+	Id    string `json:"id"`
+	Email string `json:"email"`
+	Role  string `json:"role"`
+}
+
 func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
@@ -26,7 +33,8 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		}
 
 		var req registerRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
 			log.Error("error message", sl.Err(err))
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
@@ -46,7 +54,7 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 
 		// Проверяем, что пользователь с таким email не существует
 		var exists bool
-		err := DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1 AND deleted_at IS NULL)`, req.Email).Scan(&exists)
+		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1 AND deleted_at IS NULL)`, req.Email).Scan(&exists)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			http.Error(w, "database error", http.StatusInternalServerError)
@@ -77,15 +85,11 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 			http.Error(w, "failed to create user", http.StatusInternalServerError)
 			return
 		}
-		
 
+		resp := registerResponse{Id: userID, Email: req.Email, Role: req.Role}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusCreated) // 201
 
-		json.NewEncoder(w).Encode(map[string]string{
-			"id":    userID,
-			"email": req.Email,
-			"role":  req.Role,
-		})
+		json.NewEncoder(w).Encode(resp)
 	}
 }

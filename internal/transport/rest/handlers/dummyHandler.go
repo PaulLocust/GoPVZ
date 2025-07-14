@@ -9,12 +9,12 @@ import (
 )
 
 // TODO: 1.Авторизация пользователей /dummyLogin
-type loginRequest struct {
-	Role   string `json:"role"`    // client, moderator и т.п.
-	UserID int    `json:"user_id"` // можно передать ID или сгенерировать
+type dummyAuthRequest struct {
+	Role   string `json:"role"`
+	UserID string `json:"user_id"`
 }
 
-type loginResponse struct {
+type dummyAuthResponse struct {
 	Token string `json:"token"`
 }
 
@@ -28,15 +28,15 @@ func DummyLoginHandler(log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		var req loginRequest
+		var req dummyAuthRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-            log.Error("error message", sl.Err(err))
+			log.Error("error message", sl.Err(err))
 			http.Error(w, "invalid request body", http.StatusBadRequest)
 			return
 		}
 
-		// Можно добавить валидацию роли, чтобы разрешать только нужные
+		// валидация роли
 		allowedRoles := map[string]bool{
 			"moderator": true,
 			"employee":  true,
@@ -46,11 +46,6 @@ func DummyLoginHandler(log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		// Если user_id не передан, можно сгенерировать, например, 1
-		if req.UserID == 0 {
-			req.UserID = 1
-		}
-
 		token, err := jwt_gen.GenerateJWT(req.Role, req.UserID)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
@@ -58,10 +53,9 @@ func DummyLoginHandler(log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		resp := loginResponse{Token: token}
+		resp := dummyAuthResponse{Token: token}
 		w.Header().Set("Content-Type", "application/json")
+
 		json.NewEncoder(w).Encode(resp)
 	}
 }
-
-// TODO: 2.Регистрация и авторизация пользователей по почте и паролю
