@@ -6,7 +6,7 @@ type User struct {
 	ID        string     `json:"id" db:"id"`
 	Email     string     `json:"email" db:"email"`
 	Password  string     `json:"-" db:"password_hash"`
-	Role      string     `json:"role" db:"role"` // client или moderator
+	Role      string     `json:"role" db:"role"` // employee или moderator
 	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
 	DeletedAt *time.Time `json:"-" db:"deleted_at"`
 }

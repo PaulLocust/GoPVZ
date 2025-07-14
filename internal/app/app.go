@@ -4,6 +4,7 @@ import (
 	"GoPVZ/internal/config"
 	"GoPVZ/internal/database/postgres"
 	"GoPVZ/internal/lib/handler/slogpretty"
+	"GoPVZ/internal/transport/rest"
 	"log/slog"
 	"os"
 )
@@ -19,10 +20,14 @@ func Run() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting application", slog.Any("config", cfg))
+	log.Info("Starting application", slog.Any("config", cfg))
 
-	postgres.ConnectToPostgresDB(cfg)
-	log.Info("Connected to database", slog.String("dbname", cfg.DB.Name))
+	postgres.ConnectToPostgresDB(cfg, log)
+
+	// Starting rest server :8080
+	log.Info("Starting REST server", slog.Int("port", cfg.REST.Port))
+	rest.Run(cfg, log, postgres.DBConn)
+	
 }
 
 func setupLogger(env string) *slog.Logger {

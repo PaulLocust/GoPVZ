@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Env  string     `yaml:"env" env-default:"local"`
 	DB   Database   `yaml:"database"`
+	REST RESTConfig `yaml:"rest"`
 	GRPC GRPCConfig `yaml:"grpc"`
 }
 
@@ -21,6 +22,12 @@ type Database struct {
 	Name     string `yaml:"name" env-default:"postgres"`
 	Port     int    `yaml:"port" env-default:"5432"`
 	SSLMode  string `yaml:"ssl_mode" env-default:"disable"`
+}
+
+type RESTConfig struct {
+	Port      int           `yaml:"port"`
+	Timeout   time.Duration `yaml:"timeout"`
+	JWTSecret string        `yaml:"jwt_secret"`
 }
 
 type GRPCConfig struct {

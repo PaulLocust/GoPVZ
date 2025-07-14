@@ -1,4 +1,4 @@
-package rest
+package handlers
 
 // TODO: 3.Заведение ПВЗ
 
