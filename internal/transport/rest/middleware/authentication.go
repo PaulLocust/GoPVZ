@@ -1,92 +1,81 @@
 package middleware
 
 import (
-	"context"
-	"fmt"
+	"GoPVZ/internal/lib/sl"
+	"GoPVZ/internal/transport/rest/helpers"
+	"log/slog"
 	"net/http"
 	"os"
-	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type contextKey string
+var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
-const RoleKey contextKey = "userRole"
-const UserIDKey contextKey = "userID"
+func JWTAuthMiddleware(log *slog.Logger, requiredRoles ...string) func(http.Handler) http.HandlerFunc {
+	return func(next http.Handler) http.HandlerFunc {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				helpers.WriteJSONError(w, "Authorization header required", http.StatusUnauthorized)
+				return
+			}
 
-// Ключ для подписи
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+			tokenStr := authHeader
 
-// Функция для извлечения и проверки JWT из заголовка
-func JWTAuthMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        authHeader := r.Header.Get("Authorization")
-        if authHeader == "" {
-            http.Error(w, "missing Authorization header", http.StatusUnauthorized)
-            return
-        }
+			token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrTokenSignatureInvalid
+				}
+				return secretKey, nil
+			})
 
-        parts := strings.SplitN(authHeader, " ", 2)
-        if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-            http.Error(w, "invalid Authorization header format", http.StatusUnauthorized)
-            return
-        }
+			if err != nil {
+				log.Error("error message", sl.Err(err))
+				helpers.WriteJSONError(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
 
-        tokenString := parts[1]
+			if !token.Valid {
+				log.Error("error message: Invalid token")
+				helpers.WriteJSONError(w, "Invalid token", http.StatusUnauthorized)
+				return
+			}
 
-        // Парсим токен
-        token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-            // Проверяем метод подписи
-            if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-                return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-            }
-            return jwtSecret, nil
-        })
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				helpers.WriteJSONError(w, "Invalid token claims", http.StatusUnauthorized)
+				return
+			}
 
-        if err != nil || !token.Valid {
-            http.Error(w, "invalid token", http.StatusUnauthorized)
-            return
-        }
+			// Проверка срока действия через GetExpirationTime()
+			exp, err := claims.GetExpirationTime()
+			if err != nil || exp == nil || exp.Before(time.Now()) {
+				log.Error("error message", sl.Err(err))
+				helpers.WriteJSONError(w, "Token expired", http.StatusUnauthorized)
+				return
+			}
 
-        claims, ok := token.Claims.(jwt.MapClaims)
-        if !ok {
-            http.Error(w, "invalid token claims", http.StatusUnauthorized)
-            return
-        }
+			roleVal, ok := claims["role"].(string)
+			if !ok || roleVal == "" {
+				helpers.WriteJSONError(w, "Role claim missing or invalid", http.StatusUnauthorized)
+				return
+			}
 
-        // Извлекаем роль и user_id из claims
-        role, ok := claims["role"].(string)
-        if !ok {
-            http.Error(w, "role claim missing", http.StatusUnauthorized)
-            return
-        }
+			allowed := false
+			for _, r := range requiredRoles {
+				if roleVal == r {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				helpers.WriteJSONError(w, "Forbidden: insufficient permissions", http.StatusForbidden)
+				return
+			}
 
-        userID, _ := claims["user_id"].(string) // если нужно
-
-        // Кладём в контекст
-        ctx := context.WithValue(r.Context(), RoleKey, role)
-        ctx = context.WithValue(ctx, UserIDKey, userID)
-
-        next.ServeHTTP(w, r.WithContext(ctx))
-    })
-}
-
-// Middleware для проверки роли, как в предыдущем ответе
-func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
-    allowed := map[string]bool{}
-    for _, r := range allowedRoles {
-        allowed[strings.ToLower(r)] = true
-    }
-
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            role, ok := r.Context().Value(RoleKey).(string)
-            if !ok || !allowed[strings.ToLower(role)] {
-                http.Error(w, "forbidden: insufficient role", http.StatusForbidden)
-                return
-            }
-            next.ServeHTTP(w, r)
-        })
-    }
+			next.ServeHTTP(w, r)
+		})
+	}
 }

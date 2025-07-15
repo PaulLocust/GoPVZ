@@ -11,7 +11,6 @@ import (
 
 type DummyLoginRequest struct {
 	Role   string `json:"role" example:"moderator"`
-	UserID string `json:"user_id" example:"12345"`
 }
 
 type DummyLoginResponse struct {
@@ -19,8 +18,8 @@ type DummyLoginResponse struct {
 }
 
 // DummyLoginHandler godoc
-// @Summary Генерация JWT токена для тестового входа
-// @Tags auth
+// @Summary Получение тестового токена
+// @Tags Default
 // @Accept json
 // @Produce json
 // @Param dummyLoginRequest body DummyLoginRequest true "Данные для входа (role и user_id)"
@@ -54,7 +53,7 @@ func DummyLoginHandler(log *slog.Logger) http.HandlerFunc {
 			return
 		}
 
-		token, err := jwt_gen.GenerateJWT(req.Role, req.UserID)
+		token, err := jwt_gen.GenerateJWT(req.Role)
 		if err != nil {
 			log.Error("error generating token", sl.Err(err))
 			helpers.WriteJSONError(w, "cannot generate token", http.StatusInternalServerError)

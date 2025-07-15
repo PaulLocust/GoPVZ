@@ -24,9 +24,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Default"
                 ],
-                "summary": "Генерация JWT токена для тестового входа",
+                "summary": "Получение тестового токена",
                 "parameters": [
                     {
                         "description": "Данные для входа (role и user_id)",
@@ -75,7 +75,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Default"
                 ],
                 "summary": "Авторизация пользователя",
                 "parameters": [
@@ -123,6 +123,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/pvz": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый пункт выдачи заказов в указанном городе",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Default"
+                ],
+                "summary": "Создание ПВЗ (только для модераторов)",
+                "parameters": [
+                    {
+                        "description": "Данные для создания ПВЗ",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PVZRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ПВЗ успешно создан",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PVZResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "consumes": [
@@ -132,9 +201,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Default"
                 ],
-                "summary": "Регистрация нового пользователя",
+                "summary": "Регистрация пользователя",
                 "parameters": [
                     {
                         "description": "Данные для регистрации",
@@ -188,10 +257,6 @@ const docTemplate = `{
                 "role": {
                     "type": "string",
                     "example": "moderator"
-                },
-                "user_id": {
-                    "type": "string",
-                    "example": "12345"
                 }
             }
         },
@@ -223,6 +288,40 @@ const docTemplate = `{
                 "token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "handlers.PVZRequest": {
+            "type": "object",
+            "required": [
+                "city"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "enum": [
+                        "Москва",
+                        "Санкт-Петербург",
+                        "Казань"
+                    ],
+                    "example": "Москва"
+                }
+            }
+        },
+        "handlers.PVZResponse": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "example": "Москва"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "registrationDate": {
+                    "type": "string",
+                    "example": "2025-07-15T13:39:10.268Z"
                 }
             }
         },
@@ -271,7 +370,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "bearerAuth": {
+        "BearerAuth": {
             "description": "JWT авторизация с Bearer схемой",
             "type": "apiKey",
             "name": "Authorization",

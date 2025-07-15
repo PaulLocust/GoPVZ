@@ -25,8 +25,8 @@ type RegisterResponse struct {
 }
 
 // RegisterHandler godoc
-// @Summary Регистрация нового пользователя
-// @Tags auth
+// @Summary Регистрация пользователя
+// @Tags Default
 // @Accept json
 // @Produce json
 // @Param registerRequest body RegisterRequest true "Данные для регистрации"
@@ -67,7 +67,7 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 
 		// Проверяем, что пользователь с таким email не существует
 		var exists bool
-		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1 AND deleted_at IS NULL)`, req.Email).Scan(&exists)
+		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)`, req.Email).Scan(&exists)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)

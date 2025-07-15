@@ -25,7 +25,7 @@ type LoginResponse struct {
 
 // LoginHandler godoc
 // @Summary Авторизация пользователя
-// @Tags auth
+// @Tags Default
 // @Accept json
 // @Produce json
 // @Param loginRequest body LoginRequest true "Данные для входа"
@@ -59,7 +59,7 @@ func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		}
 
 		var exists bool
-		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1 AND deleted_at IS NULL)`, req.Email).Scan(&exists)
+		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE email=$1)`, req.Email).Scan(&exists)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)
@@ -70,10 +70,9 @@ func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		var id string
 		var password_hash string
 		var role string
-		err = DBConn.QueryRow(`SELECT id, password_hash, role FROM users WHERE email=$1 AND deleted_at IS NULL`, req.Email).Scan(&id, &password_hash, &role)
+		err = DBConn.QueryRow(`SELECT id, password_hash, role FROM users WHERE email=$1`, req.Email).Scan(&password_hash, &role)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)
@@ -91,7 +90,7 @@ func LoginHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		token, err := jwt_gen.GenerateJWT(role, id)
+		token, err := jwt_gen.GenerateJWT(role)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			helpers.WriteJSONError(w, "cannot generate token", http.StatusInternalServerError)

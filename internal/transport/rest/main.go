@@ -6,7 +6,7 @@
 // @host localhost:8080
 // @BasePath /
 //
-// @securityDefinitions.apikey bearerAuth
+// @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
 // @description JWT авторизация с Bearer схемой
@@ -14,13 +14,15 @@ package rest
 
 import (
 	"GoPVZ/internal/config"
+	_ "GoPVZ/internal/transport/rest/docs"
 	"GoPVZ/internal/transport/rest/handlers"
+	"GoPVZ/internal/transport/rest/middleware"
 	"database/sql"
 	"fmt"
 	"log/slog"
 	"net/http"
+
 	httpSwagger "github.com/swaggo/http-swagger"
-	_ "GoPVZ/internal/transport/rest/docs"
 )
 
 func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
@@ -34,6 +36,7 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 	mux.HandleFunc("/dummyLogin", handlers.DummyLoginHandler(log))
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
 	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
+	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, "moderator")(handlers.PVZHandler(log, DBConn)))
 
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
