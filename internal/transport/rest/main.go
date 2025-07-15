@@ -25,6 +25,11 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+const (
+	moderator = "moderator"
+	employee = "employee"
+)
+
 func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 
 	mux := http.NewServeMux()
@@ -36,10 +41,12 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 	mux.HandleFunc("/dummyLogin", handlers.DummyLoginHandler(log))
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
 	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
-	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, "moderator")(handlers.PVZHandler(log, DBConn)))
-
+	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, moderator)(handlers.PVZHandler(log, DBConn)))
+	mux.HandleFunc("/receptions", middleware.JWTAuthMiddleware(log, employee)(handlers.ReceptionHandler(log, DBConn)))
+	
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
+	log.Info("Starting REST server", slog.Int("port", cfg.REST.Port))
 	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.REST.Port), mux)
 	if err != nil {
 		panic(err)

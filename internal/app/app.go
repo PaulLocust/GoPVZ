@@ -19,13 +19,9 @@ func Run() {
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
-
 	log.Info("Starting application", slog.Any("config", cfg))
 
 	postgres.ConnectToPostgresDB(cfg, log)
-
-	// Starting rest server :8080
-	log.Info("Starting REST server", slog.Int("port", cfg.REST.Port))
 	rest.Run(cfg, log, postgres.DBConn)
 	
 }

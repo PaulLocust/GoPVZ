@@ -51,6 +51,32 @@ definitions:
         example: "2025-07-15T13:39:10.268Z"
         type: string
     type: object
+  handlers.ReceptionRequest:
+    properties:
+      pvzId:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+    type: object
+  handlers.ReceptionResponse:
+    properties:
+      dateTime:
+        example: "2025-07-15T18:55:28.164Z"
+        type: string
+      id:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      pvzId:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      status:
+        enum:
+        - in_progress
+        - close
+        example: in_progress
+        type: string
+    required:
+    - status
+    type: object
   handlers.RegisterRequest:
     properties:
       email:
@@ -200,6 +226,52 @@ paths:
       security:
       - BearerAuth: []
       summary: Создание ПВЗ (только для модераторов)
+      tags:
+      - Default
+  /receptions:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую приемку товаров для указанного ПВЗ. Требуется, чтобы
+        предыдущая приемка была закрыта.
+      parameters:
+      - description: Данные для создания приемки
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ReceptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Приемка успешно создана
+          schema:
+            $ref: '#/definitions/handlers.ReceptionResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "401":
+          description: Неверный PVZ ID или предыдущая приемка не закрыта
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "405":
+          description: Метод не разрешен
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - BearerAuth: []
+      summary: Создание новой приемки товаров (только для сотрудников ПВЗ)
       tags:
       - Default
   /register:

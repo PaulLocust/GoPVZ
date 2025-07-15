@@ -192,6 +192,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/receptions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новую приемку товаров для указанного ПВЗ. Требуется, чтобы предыдущая приемка была закрыта.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Default"
+                ],
+                "summary": "Создание новой приемки товаров (только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "description": "Данные для создания приемки",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ReceptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Приемка успешно создана",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ReceptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный PVZ ID или предыдущая приемка не закрыта",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "consumes": [
@@ -322,6 +394,43 @@ const docTemplate = `{
                 "registrationDate": {
                     "type": "string",
                     "example": "2025-07-15T13:39:10.268Z"
+                }
+            }
+        },
+        "handlers.ReceptionRequest": {
+            "type": "object",
+            "properties": {
+                "pvzId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                }
+            }
+        },
+        "handlers.ReceptionResponse": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "dateTime": {
+                    "type": "string",
+                    "example": "2025-07-15T18:55:28.164Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "pvzId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "in_progress",
+                        "close"
+                    ],
+                    "example": "in_progress"
                 }
             }
         },
