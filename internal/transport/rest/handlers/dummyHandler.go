@@ -10,7 +10,7 @@ import (
 )
 
 type DummyLoginRequest struct {
-	Role   string `json:"role" example:"moderator"`
+	Role string `json:"role" example:"moderator"`
 }
 
 type DummyLoginResponse struct {

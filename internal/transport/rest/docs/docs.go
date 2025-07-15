@@ -123,6 +123,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/products": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет новый товар в текущую открытую приемку для указанного ПВЗ",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Default"
+                ],
+                "summary": "Добавление товара в текущую приемку (только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "description": "Данные товара",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Товар успешно добавлен",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProductResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет открытой приемки для указанного ПВЗ",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/pvz": {
             "post": {
                 "security": [
@@ -173,6 +245,67 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/pvz/{pvzId}/delete_last_product": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет самый последний добавленный товар (LIFO) (по дате) из открытой приемки указанного ПВЗ",
+                "tags": [
+                    "Default"
+                ],
+                "summary": "Удаление последнего добавленного товара из текущей приемки (LIFO, только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пункта выдачи заказов (ПВЗ)",
+                        "name": "pvzId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Товар успешно удален",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный путь запроса",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Не найдено: либо нет открытой приемки, либо нет товаров для удаления",
                         "schema": {
                             "$ref": "#/definitions/helpers.ErrorResponse"
                         }
@@ -394,6 +527,56 @@ const docTemplate = `{
                 "registrationDate": {
                     "type": "string",
                     "example": "2025-07-15T13:39:10.268Z"
+                }
+            }
+        },
+        "handlers.ProductRequest": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "pvzId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "электроника",
+                        "одежда",
+                        "обувь"
+                    ],
+                    "example": "электроника"
+                }
+            }
+        },
+        "handlers.ProductResponse": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "dateTime": {
+                    "type": "string",
+                    "example": "2025-07-15T18:55:28.164Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "receptionId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "электроника",
+                        "одежда",
+                        "обувь"
+                    ],
+                    "example": "in_progress"
                 }
             }
         },

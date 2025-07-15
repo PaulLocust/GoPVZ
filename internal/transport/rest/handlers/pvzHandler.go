@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 type PVZRequest struct {
 	City string `json:"city" example:"Москва" validate:"required,oneof=Москва Санкт-Петербург Казань"`
 }
@@ -54,9 +53,9 @@ func PVZHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 		}
 
 		allowedCities := map[string]bool{
-			"Москва":          true,
-			"Санкт-Петербург": true,
-			"Казань":          true,
+			moscow:           true,
+			saint_petersburg: true,
+			kazan:            true,
 		}
 		if !allowedCities[req.City] {
 			helpers.WriteJSONError(w, "invalid city", http.StatusBadRequest)

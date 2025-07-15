@@ -21,11 +21,6 @@ type ReceptionResponse struct {
 	Status   string `json:"status" example:"in_progress" validate:"required,oneof=in_progress close"`
 }
 
-const (
-	in_progress = "in_progress"
-	close       = "close"
-)
-
 
 // ReceptionHandler обрабатывает запросы для работы с приемками товаров
 // @Summary Создание новой приемки товаров (только для сотрудников ПВЗ)
