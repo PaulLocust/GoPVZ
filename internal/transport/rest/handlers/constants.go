@@ -16,3 +16,8 @@ const (
 	in_progress = "in_progress"
 	close       = "close"
 )
+
+const (
+	moderator = "moderator"
+	employee  = "employee"
+)

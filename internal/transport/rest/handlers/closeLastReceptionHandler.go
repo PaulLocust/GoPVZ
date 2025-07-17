@@ -12,8 +12,8 @@ import (
 
 type CloseLastReceptionResponse struct {
 	Id       string `json:"id" example:"3fa85f64-5717-4562-b3fc-2c963f66afa6"`
-	DateTime string `json:"dateTime" example:"2025-07-17T12:15:49.386Z"`
 	PVZId    string `json:"pvzId" example:"3fa85f64-5717-4562-b3fc-2c963f66afa6"`
+	DateTime string `json:"dateTime" example:"2025-07-17T12:15:49.386Z"`
 	Status   string `json:"status" example:"close"`
 }
 

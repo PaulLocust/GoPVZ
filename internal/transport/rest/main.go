@@ -1,6 +1,6 @@
 // Package rest GoPVZ REST API
 //
-// @title backend service
+// @title Backend service GoPVZ
 // @version 1.0.0
 // @description Сервис для управления ПВЗ и приемкой товаров
 // @host localhost:8080
@@ -41,13 +41,14 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 	mux.HandleFunc("/dummyLogin", handlers.DummyLoginHandler(log))
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
 	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
-	
+
 	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, moderator)(handlers.PVZHandler(log, DBConn)))
-	
+
 	mux.HandleFunc("/receptions", middleware.JWTAuthMiddleware(log, employee)(handlers.ReceptionHandler(log, DBConn)))
 	mux.HandleFunc("/products", middleware.JWTAuthMiddleware(log, employee)(handlers.ProductHandler(log, DBConn)))
 	mux.HandleFunc("/pvz/{pvzId}/delete_last_product", middleware.JWTAuthMiddleware(log, employee)(handlers.DeleteLastProductHandler(log, DBConn)))
 	mux.HandleFunc("/pvz/{pvzId}/close_last_reception", middleware.JWTAuthMiddleware(log, employee)(handlers.CloseLastReceptionHandler(log, DBConn)))
+	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, employee, moderator)(handlers.GetPVZListHandler(log, DBConn)))
 
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 

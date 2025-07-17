@@ -45,8 +45,8 @@ func DummyLoginHandler(log *slog.Logger) http.HandlerFunc {
 		}
 
 		allowedRoles := map[string]bool{
-			"moderator": true,
-			"employee":  true,
+			moderator: true,
+			employee:  true,
 		}
 		if !allowedRoles[req.Role] {
 			helpers.WriteJSONError(w, "invalid role", http.StatusBadRequest)
