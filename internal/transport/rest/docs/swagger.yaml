@@ -158,11 +158,85 @@ definitions:
         example: string
         type: string
     type: object
+  models.PVZ:
+    properties:
+      city:
+        enum:
+        - Москва
+        - Санкт-Петербург
+        - Казань
+        example: Москва
+        type: string
+      id:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      registrationDate:
+        example: "2025-07-17T12:15:49.386Z"
+        type: string
+    required:
+    - city
+    type: object
+  models.PVZWithReceptionsResponse:
+    properties:
+      pvz:
+        $ref: '#/definitions/models.PVZ'
+      receptions:
+        items:
+          $ref: '#/definitions/models.ReceptionWithProducts'
+        type: array
+    type: object
+  models.Product:
+    properties:
+      dateTime:
+        description: Дата и время приёма товара
+        example: "2025-07-17T12:15:49.386Z"
+        type: string
+      id:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      receptionId:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      type:
+        enum:
+        - электроника
+        - одежда
+        - обувь
+        example: in_progress
+        type: string
+    required:
+    - type
+    type: object
+  models.Reception:
+    properties:
+      dateTime:
+        description: Дата и время проведения приёмки
+        example: "2025-07-17T12:15:49.386Z"
+        type: string
+      id:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      pvzId:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      status:
+        example: in_progress
+        type: string
+    type: object
+  models.ReceptionWithProducts:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/models.Product'
+        type: array
+      reception:
+        $ref: '#/definitions/models.Reception'
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: Сервис для управления ПВЗ и приемкой товаров
-  title: backend service
+  title: Backend service GoPVZ
   version: 1.0.0
 paths:
   /dummyLogin:
@@ -282,6 +356,53 @@ paths:
       tags:
       - Protected
   /pvz:
+    get:
+      description: Возвращает список ПВЗ с вложенной информацией о приемках и товарах
+        за указанный период
+      parameters:
+      - description: Начальная дата диапазона (формат 2025-07-17T12:45:55.122Z)
+        in: query
+        name: startDate
+        type: string
+      - description: Конечная дата диапазона (формат 2025-07-17T12:45:55.122Z)
+        in: query
+        name: endDate
+        type: string
+      - description: Номер страницы (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: Количество элементов на странице (по умолчанию 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.PVZWithReceptionsResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией (только
+        для сотрудников или модераторов)
+      tags:
+      - Protected
     post:
       consumes:
       - application/json

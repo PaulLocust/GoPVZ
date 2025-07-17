@@ -196,6 +196,76 @@ const docTemplate = `{
             }
         },
         "/pvz": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список ПВЗ с вложенной информацией о приемках и товарах за указанный период",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Protected"
+                ],
+                "summary": "Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией (только для сотрудников или модераторов)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Начальная дата диапазона (формат 2025-07-17T12:45:55.122Z)",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Конечная дата диапазона (формат 2025-07-17T12:45:55.122Z)",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество элементов на странице (по умолчанию 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.PVZWithReceptionsResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -747,6 +817,111 @@ const docTemplate = `{
                     "example": "string"
                 }
             }
+        },
+        "models.PVZ": {
+            "type": "object",
+            "required": [
+                "city"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "enum": [
+                        "Москва",
+                        "Санкт-Петербург",
+                        "Казань"
+                    ],
+                    "example": "Москва"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "registrationDate": {
+                    "type": "string",
+                    "example": "2025-07-17T12:15:49.386Z"
+                }
+            }
+        },
+        "models.PVZWithReceptionsResponse": {
+            "type": "object",
+            "properties": {
+                "pvz": {
+                    "$ref": "#/definitions/models.PVZ"
+                },
+                "receptions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ReceptionWithProducts"
+                    }
+                }
+            }
+        },
+        "models.Product": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "dateTime": {
+                    "description": "Дата и время приёма товара",
+                    "type": "string",
+                    "example": "2025-07-17T12:15:49.386Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "receptionId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "электроника",
+                        "одежда",
+                        "обувь"
+                    ],
+                    "example": "in_progress"
+                }
+            }
+        },
+        "models.Reception": {
+            "type": "object",
+            "properties": {
+                "dateTime": {
+                    "description": "Дата и время проведения приёмки",
+                    "type": "string",
+                    "example": "2025-07-17T12:15:49.386Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "pvzId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "in_progress"
+                }
+            }
+        },
+        "models.ReceptionWithProducts": {
+            "type": "object",
+            "properties": {
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Product"
+                    }
+                },
+                "reception": {
+                    "$ref": "#/definitions/models.Reception"
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -765,7 +940,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "backend service",
+	Title:            "Backend service GoPVZ",
 	Description:      "Сервис для управления ПВЗ и приемкой товаров",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

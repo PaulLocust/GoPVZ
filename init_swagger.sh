@@ -1,2 +1,2 @@
 cd ./internal/transport/rest
-swag init
+swag init 

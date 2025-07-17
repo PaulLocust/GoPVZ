@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"GoPVZ/internal/lib/sl"
-	"GoPVZ/internal/models"
 	"GoPVZ/internal/transport/rest/helpers"
+	"GoPVZ/internal/transport/rest/models"
 	"database/sql"
 	"encoding/json"
 	"log/slog"
@@ -13,7 +13,7 @@ import (
 )
 
 // GetPVZListHandler godoc
-// @Summary Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией
+// @Summary Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией (только для сотрудников или модераторов)
 // @Description Возвращает список ПВЗ с вложенной информацией о приемках и товарах за указанный период
 // @Tags Protected
 // @Produce json
@@ -97,16 +97,17 @@ func GetPVZListHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 			// Для каждого ПВЗ получаем приемки в указанном диапазоне дат
 			receptionQuery := `
                 SELECT id, date_time, status
-                FROM receptions
-                WHERE pvz_id = $1
-                AND ($2 = '' OR date_time >= $2)
-                AND ($3 = '' OR date_time <= $3)
-                ORDER BY date_time DESC
+    			FROM receptions
+    			WHERE pvz_id = $1
+    			AND ($2 = '' OR date_time >= to_timestamp($2, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))
+    			AND ($3 = '' OR date_time <= to_timestamp($3, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'))
+    			ORDER BY date_time DESC
             `
 			receptionRows, err := DBConn.Query(receptionQuery, pvz.ID, startDate, endDate)
 			if err != nil {
 				log.Error("Database error (receptions)", sl.Err(err))
-				continue
+				helpers.WriteJSONError(w, "Database error", http.StatusInternalServerError)
+				return
 			}
 
 			var receptions []models.ReceptionWithProducts
@@ -128,7 +129,8 @@ func GetPVZListHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 				productRows, err := DBConn.Query(productsQuery, reception.ID)
 				if err != nil {
 					log.Error("Database error (products)", sl.Err(err))
-					continue
+					helpers.WriteJSONError(w, "Database error", http.StatusInternalServerError)
+					return
 				}
 
 				var products []models.Product

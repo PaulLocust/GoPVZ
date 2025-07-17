@@ -16,6 +16,8 @@ import (
 	"GoPVZ/internal/config"
 	_ "GoPVZ/internal/transport/rest/docs"
 	"GoPVZ/internal/transport/rest/handlers"
+	"GoPVZ/internal/transport/rest/helpers"
+
 	"GoPVZ/internal/transport/rest/middleware"
 	"database/sql"
 	"fmt"
@@ -42,13 +44,25 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
 	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
 
-	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, moderator)(handlers.PVZHandler(log, DBConn)))
+	//mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, moderator)(handlers.PVZHandler(log, DBConn)))
 
 	mux.HandleFunc("/receptions", middleware.JWTAuthMiddleware(log, employee)(handlers.ReceptionHandler(log, DBConn)))
 	mux.HandleFunc("/products", middleware.JWTAuthMiddleware(log, employee)(handlers.ProductHandler(log, DBConn)))
 	mux.HandleFunc("/pvz/{pvzId}/delete_last_product", middleware.JWTAuthMiddleware(log, employee)(handlers.DeleteLastProductHandler(log, DBConn)))
 	mux.HandleFunc("/pvz/{pvzId}/close_last_reception", middleware.JWTAuthMiddleware(log, employee)(handlers.CloseLastReceptionHandler(log, DBConn)))
-	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, employee, moderator)(handlers.GetPVZListHandler(log, DBConn)))
+	//mux.HandleFunc("/pvz/list", middleware.JWTAuthMiddleware(log, employee, moderator)(handlers.GetPVZListHandler(log, DBConn)))
+
+	mux.HandleFunc("/pvz", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			middleware.JWTAuthMiddleware(log, moderator)(handlers.PVZHandler(log, DBConn)).ServeHTTP(w, r)
+		case http.MethodGet:
+			middleware.JWTAuthMiddleware(log, employee, moderator)(handlers.GetPVZListHandler(log, DBConn)).ServeHTTP(w, r)
+		default:
+			w.Header().Set("Allow", "GET, POST")
+			helpers.WriteJSONError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
