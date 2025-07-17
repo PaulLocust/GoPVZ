@@ -23,7 +23,7 @@ type PVZResponse struct {
 // PVZHandler обрабатывает запросы для работы с ПВЗ
 // @Summary Создание ПВЗ (только для модераторов)
 // @Description Создает новый пункт выдачи заказов в указанном городе
-// @Tags Default
+// @Tags Protected
 // @Accept json
 // @Produce json
 // @Param input body PVZRequest true "Данные для создания ПВЗ"

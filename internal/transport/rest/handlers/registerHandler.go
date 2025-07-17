@@ -26,7 +26,7 @@ type RegisterResponse struct {
 
 // RegisterHandler godoc
 // @Summary Регистрация пользователя
-// @Tags Default
+// @Tags Public
 // @Accept json
 // @Produce json
 // @Param registerRequest body RegisterRequest true "Данные для регистрации"

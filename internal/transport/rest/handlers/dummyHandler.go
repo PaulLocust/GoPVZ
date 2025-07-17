@@ -19,7 +19,7 @@ type DummyLoginResponse struct {
 
 // DummyLoginHandler godoc
 // @Summary Получение тестового токена
-// @Tags Default
+// @Tags Public
 // @Accept json
 // @Produce json
 // @Param dummyLoginRequest body DummyLoginRequest true "Данные для входа (role и user_id)"

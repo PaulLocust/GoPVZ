@@ -25,7 +25,7 @@ type ReceptionResponse struct {
 // ReceptionHandler обрабатывает запросы для работы с приемками товаров
 // @Summary Создание новой приемки товаров (только для сотрудников ПВЗ)
 // @Description Создает новую приемку товаров для указанного ПВЗ. Требуется, чтобы предыдущая приемка была закрыта.
-// @Tags Default
+// @Tags Protected
 // @Accept json
 // @Produce json
 // @Security BearerAuth

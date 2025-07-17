@@ -24,7 +24,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Default"
+                    "Public"
                 ],
                 "summary": "Получение тестового токена",
                 "parameters": [
@@ -75,7 +75,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Default"
+                    "Public"
                 ],
                 "summary": "Авторизация пользователя",
                 "parameters": [
@@ -141,7 +141,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Default"
+                    "Protected"
                 ],
                 "summary": "Добавление товара в текущую приемку (только для сотрудников ПВЗ)",
                 "parameters": [
@@ -210,7 +210,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Default"
+                    "Protected"
                 ],
                 "summary": "Создание ПВЗ (только для модераторов)",
                 "parameters": [
@@ -264,6 +264,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/pvz/{pvzId}/close_last_reception": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Закрывает последнюю открытую приемку для указанного ПВЗ (меняет статус на \"closed\")",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Protected"
+                ],
+                "summary": "Закрытие последней открытой приемки товаров в рамках ПВЗ (только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID пункта выдачи заказов (ПВЗ)",
+                        "name": "pvzId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Приемка успешно закрыта",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CloseLastReceptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный путь запроса",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Не найдено открытой приемки для данного ПВЗ",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "405": {
+                        "description": "Метод не разрешен (разрешен только POST)",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/helpers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/pvz/{pvzId}/delete_last_product": {
             "post": {
                 "security": [
@@ -273,7 +340,7 @@ const docTemplate = `{
                 ],
                 "description": "Удаляет самый последний добавленный товар (LIFO) (по дате) из открытой приемки указанного ПВЗ",
                 "tags": [
-                    "Default"
+                    "Protected"
                 ],
                 "summary": "Удаление последнего добавленного товара из текущей приемки (LIFO, только для сотрудников ПВЗ)",
                 "parameters": [
@@ -343,7 +410,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Default"
+                    "Protected"
                 ],
                 "summary": "Создание новой приемки товаров (только для сотрудников ПВЗ)",
                 "parameters": [
@@ -406,7 +473,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Default"
+                    "Public"
                 ],
                 "summary": "Регистрация пользователя",
                 "parameters": [
@@ -456,6 +523,27 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.CloseLastReceptionResponse": {
+            "type": "object",
+            "properties": {
+                "dateTime": {
+                    "type": "string",
+                    "example": "2025-07-17T12:15:49.386Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "pvzId": {
+                    "type": "string",
+                    "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "close"
+                }
+            }
+        },
         "handlers.DummyLoginRequest": {
             "type": "object",
             "properties": {

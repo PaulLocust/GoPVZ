@@ -25,7 +25,7 @@ type LoginResponse struct {
 
 // LoginHandler godoc
 // @Summary Авторизация пользователя
-// @Tags Default
+// @Tags Public
 // @Accept json
 // @Produce json
 // @Param loginRequest body LoginRequest true "Данные для входа"

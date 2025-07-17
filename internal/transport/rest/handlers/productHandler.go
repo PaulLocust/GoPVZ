@@ -26,7 +26,7 @@ type ProductResponse struct {
 // ProductHandler обрабатывает запросы на добавление товаров
 // @Summary Добавление товара в текущую приемку (только для сотрудников ПВЗ)
 // @Description Добавляет новый товар в текущую открытую приемку для указанного ПВЗ
-// @Tags Default
+// @Tags Protected
 // @Accept json
 // @Produce json
 // @Security BearerAuth

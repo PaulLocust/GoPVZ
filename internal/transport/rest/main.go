@@ -37,15 +37,18 @@ func Run(cfg config.Config, log *slog.Logger, DBConn *sql.DB) {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, Go!")
 	})
-	
+
 	mux.HandleFunc("/dummyLogin", handlers.DummyLoginHandler(log))
 	mux.HandleFunc("/register", handlers.RegisterHandler(log, DBConn))
 	mux.HandleFunc("/login", handlers.LoginHandler(log, DBConn))
+	
 	mux.HandleFunc("/pvz", middleware.JWTAuthMiddleware(log, moderator)(handlers.PVZHandler(log, DBConn)))
+	
 	mux.HandleFunc("/receptions", middleware.JWTAuthMiddleware(log, employee)(handlers.ReceptionHandler(log, DBConn)))
 	mux.HandleFunc("/products", middleware.JWTAuthMiddleware(log, employee)(handlers.ProductHandler(log, DBConn)))
 	mux.HandleFunc("/pvz/{pvzId}/delete_last_product", middleware.JWTAuthMiddleware(log, employee)(handlers.DeleteLastProductHandler(log, DBConn)))
-	
+	mux.HandleFunc("/pvz/{pvzId}/close_last_reception", middleware.JWTAuthMiddleware(log, employee)(handlers.CloseLastReceptionHandler(log, DBConn)))
+
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	log.Info("Starting REST server", slog.Int("port", cfg.REST.Port))

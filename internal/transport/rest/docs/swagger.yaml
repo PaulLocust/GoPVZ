@@ -1,5 +1,20 @@
 basePath: /
 definitions:
+  handlers.CloseLastReceptionResponse:
+    properties:
+      dateTime:
+        example: "2025-07-17T12:15:49.386Z"
+        type: string
+      id:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      pvzId:
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type: string
+      status:
+        example: close
+        type: string
+    type: object
   handlers.DummyLoginRequest:
     properties:
       role:
@@ -182,7 +197,7 @@ paths:
             $ref: '#/definitions/helpers.ErrorResponse'
       summary: Получение тестового токена
       tags:
-      - Default
+      - Public
   /login:
     post:
       consumes:
@@ -219,7 +234,7 @@ paths:
             $ref: '#/definitions/helpers.ErrorResponse'
       summary: Авторизация пользователя
       tags:
-      - Default
+      - Public
   /products:
     post:
       consumes:
@@ -265,7 +280,7 @@ paths:
       - BearerAuth: []
       summary: Добавление товара в текущую приемку (только для сотрудников ПВЗ)
       tags:
-      - Default
+      - Protected
   /pvz:
     post:
       consumes:
@@ -309,7 +324,52 @@ paths:
       - BearerAuth: []
       summary: Создание ПВЗ (только для модераторов)
       tags:
-      - Default
+      - Protected
+  /pvz/{pvzId}/close_last_reception:
+    post:
+      consumes:
+      - application/json
+      description: Закрывает последнюю открытую приемку для указанного ПВЗ (меняет
+        статус на "closed")
+      parameters:
+      - description: ID пункта выдачи заказов (ПВЗ)
+        in: path
+        name: pvzId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Приемка успешно закрыта
+          schema:
+            $ref: '#/definitions/handlers.CloseLastReceptionResponse'
+        "400":
+          description: Некорректный путь запроса
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "404":
+          description: Не найдено открытой приемки для данного ПВЗ
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "405":
+          description: Метод не разрешен (разрешен только POST)
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/helpers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Закрытие последней открытой приемки товаров в рамках ПВЗ (только для
+        сотрудников ПВЗ)
+      tags:
+      - Protected
   /pvz/{pvzId}/delete_last_product:
     post:
       description: Удаляет самый последний добавленный товар (LIFO) (по дате) из открытой
@@ -351,7 +411,7 @@ paths:
       summary: Удаление последнего добавленного товара из текущей приемки (LIFO, только
         для сотрудников ПВЗ)
       tags:
-      - Default
+      - Protected
   /receptions:
     post:
       consumes:
@@ -397,7 +457,7 @@ paths:
       - BearerAuth: []
       summary: Создание новой приемки товаров (только для сотрудников ПВЗ)
       tags:
-      - Default
+      - Protected
   /register:
     post:
       consumes:
@@ -434,7 +494,7 @@ paths:
             $ref: '#/definitions/helpers.ErrorResponse'
       summary: Регистрация пользователя
       tags:
-      - Default
+      - Public
 securityDefinitions:
   BearerAuth:
     description: JWT авторизация с Bearer схемой

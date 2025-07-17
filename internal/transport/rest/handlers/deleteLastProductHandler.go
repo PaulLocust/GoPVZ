@@ -12,7 +12,7 @@ import (
 // DeleteLastProductHandler godoc
 // @Summary Удаление последнего добавленного товара из текущей приемки (LIFO, только для сотрудников ПВЗ)
 // @Description Удаляет самый последний добавленный товар (LIFO) (по дате) из открытой приемки указанного ПВЗ
-// @Tags Default
+// @Tags Protected
 // @Param pvzId path string true "ID пункта выдачи заказов (ПВЗ)"
 // @Success 200 {string} string "Товар успешно удален"
 // @Failure 400 {object} helpers.ErrorResponse "Некорректный путь запроса"
