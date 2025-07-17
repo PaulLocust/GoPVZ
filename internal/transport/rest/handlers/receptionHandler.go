@@ -63,19 +63,19 @@ func ReceptionHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 			return
 		}
 		if !exists {
-			helpers.WriteJSONError(w, "invalid pvz_id", http.StatusUnauthorized)
+			helpers.WriteJSONError(w, "invalid pvz_id", http.StatusBadRequest)
 			return
 		}
 
 		// Проверка статуста прошлой приемки
-		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM receptions WHERE status=$1)`, in_progress).Scan(&exists)
+		err = DBConn.QueryRow(`SELECT EXISTS(SELECT 1 FROM receptions WHERE pvz_id=$1 AND status=$2)`, req.PVZId, in_progress).Scan(&exists)
 		if err != nil {
 			log.Error("error message", sl.Err(err))
 			helpers.WriteJSONError(w, "database error", http.StatusInternalServerError)
 			return
 		}
 		if exists {
-			helpers.WriteJSONError(w, "previous reception is not closed", http.StatusUnauthorized)
+			helpers.WriteJSONError(w, "previous reception for this pvz is not closed", http.StatusBadRequest)
 			return
 		}
 

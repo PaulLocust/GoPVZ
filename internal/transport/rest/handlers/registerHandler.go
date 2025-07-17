@@ -101,7 +101,7 @@ func RegisterHandler(log *slog.Logger, DBConn *sql.DB) http.HandlerFunc {
 
 		resp := RegisterResponse{Id: userID, Email: req.Email, Role: req.Role}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated) // 201
+		w.WriteHeader(http.StatusCreated)
 
 		json.NewEncoder(w).Encode(resp)
 	}
