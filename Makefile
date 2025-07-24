@@ -32,10 +32,9 @@ test:
 
 test-verbose:
 	@go test -v \
-		./internal/auth/... \
-		./internal/product/... \
-		./internal/pvz/... \
-		./internal/reception/... \
+		./internal/auth/usecase \
+		./internal/auth/repo \
+		./internal/auth/controller/http \
 		-coverprofile=coverage.out
 
 coverage:
