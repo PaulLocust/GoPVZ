@@ -26,12 +26,11 @@ go.work.sum
 
 # env file
 .env
-local.yaml
-Dockerfile
-docker-compose.yaml
-scripts
-local
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+
+# Test coverage data
+coverage-unit.out
+coverage-integration.out

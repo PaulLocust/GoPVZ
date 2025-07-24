@@ -1,237 +1,69 @@
 basePath: /
 definitions:
-  handlers.CloseLastReceptionResponse:
-    properties:
-      dateTime:
-        example: "2025-07-17T12:15:49.386Z"
-        type: string
-      id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      pvzId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      status:
-        example: close
-        type: string
-    type: object
-  handlers.DummyLoginRequest:
-    properties:
-      role:
-        example: moderator
-        type: string
-    type: object
-  handlers.DummyLoginResponse:
-    properties:
-      token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-    type: object
-  handlers.LoginRequest:
-    properties:
-      email:
-        example: user@example.com
-        type: string
-      password:
-        example: secret
-        type: string
-    type: object
-  handlers.LoginResponse:
-    properties:
-      token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-    type: object
-  handlers.PVZRequest:
-    properties:
-      city:
-        enum:
-        - Москва
-        - Санкт-Петербург
-        - Казань
-        example: Москва
-        type: string
-    required:
-    - city
-    type: object
-  handlers.PVZResponse:
-    properties:
-      city:
-        example: Москва
-        type: string
-      id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      registrationDate:
-        example: "2025-07-15T13:39:10.268Z"
-        type: string
-    type: object
-  handlers.ProductRequest:
-    properties:
-      pvzId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      type:
-        enum:
-        - электроника
-        - одежда
-        - обувь
-        example: электроника
-        type: string
-    required:
-    - type
-    type: object
-  handlers.ProductResponse:
-    properties:
-      dateTime:
-        example: "2025-07-15T18:55:28.164Z"
-        type: string
-      id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      receptionId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      type:
-        enum:
-        - электроника
-        - одежда
-        - обувь
-        example: in_progress
-        type: string
-    required:
-    - type
-    type: object
-  handlers.ReceptionRequest:
-    properties:
-      pvzId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-    type: object
-  handlers.ReceptionResponse:
-    properties:
-      dateTime:
-        example: "2025-07-15T18:55:28.164Z"
-        type: string
-      id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      pvzId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      status:
-        enum:
-        - in_progress
-        - close
-        example: in_progress
-        type: string
-    required:
-    - status
-    type: object
-  handlers.RegisterRequest:
-    properties:
-      email:
-        example: user@example.com
-        type: string
-      password:
-        example: strongpassword123
-        type: string
-      role:
-        example: employee
-        type: string
-    type: object
-  handlers.RegisterResponse:
-    properties:
-      email:
-        example: user@example.com
-        type: string
-      id:
-        example: uuid-or-id
-        type: string
-      role:
-        example: employee
-        type: string
-    type: object
-  helpers.ErrorResponse:
+  GoPVZ_internal_dto.Error:
     properties:
       message:
-        example: string
         type: string
     type: object
-  models.PVZ:
+  GoPVZ_internal_dto.PostDummyLoginJSONBody:
     properties:
-      city:
-        enum:
-        - Москва
-        - Санкт-Петербург
-        - Казань
-        example: Москва
+      role:
+        $ref: '#/definitions/GoPVZ_internal_dto.PostDummyLoginJSONBodyRole'
+    type: object
+  GoPVZ_internal_dto.PostDummyLoginJSONBodyRole:
+    enum:
+    - employee
+    - moderator
+    type: string
+    x-enum-varnames:
+    - PostDummyLoginJSONBodyRoleEmployee
+    - PostDummyLoginJSONBodyRoleModerator
+  GoPVZ_internal_dto.PostLoginJSONBody:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  GoPVZ_internal_dto.PostRegisterJSONBody:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      role:
+        $ref: '#/definitions/GoPVZ_internal_dto.PostRegisterJSONBodyRole'
+    type: object
+  GoPVZ_internal_dto.PostRegisterJSONBodyRole:
+    enum:
+    - employee
+    - moderator
+    type: string
+    x-enum-varnames:
+    - Employee
+    - Moderator
+  GoPVZ_internal_dto.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  GoPVZ_internal_dto.User:
+    properties:
+      email:
         type: string
       id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         type: string
-      registrationDate:
-        example: "2025-07-17T12:15:49.386Z"
-        type: string
-    required:
-    - city
+      role:
+        $ref: '#/definitions/GoPVZ_internal_dto.UserRole'
     type: object
-  models.PVZWithReceptionsResponse:
-    properties:
-      pvz:
-        $ref: '#/definitions/models.PVZ'
-      receptions:
-        items:
-          $ref: '#/definitions/models.ReceptionWithProducts'
-        type: array
-    type: object
-  models.Product:
-    properties:
-      dateTime:
-        description: Дата и время приёма товара
-        example: "2025-07-17T12:15:49.386Z"
-        type: string
-      id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      receptionId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      type:
-        enum:
-        - электроника
-        - одежда
-        - обувь
-        example: in_progress
-        type: string
-    required:
-    - type
-    type: object
-  models.Reception:
-    properties:
-      dateTime:
-        description: Дата и время проведения приёмки
-        example: "2025-07-17T12:15:49.386Z"
-        type: string
-      id:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      pvzId:
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        type: string
-      status:
-        example: in_progress
-        type: string
-    type: object
-  models.ReceptionWithProducts:
-    properties:
-      products:
-        items:
-          $ref: '#/definitions/models.Product'
-        type: array
-      reception:
-        $ref: '#/definitions/models.Reception'
-    type: object
+  GoPVZ_internal_dto.UserRole:
+    enum:
+    - employee
+    - moderator
+    type: string
+    x-enum-varnames:
+    - UserRoleEmployee
+    - UserRoleModerator
 host: localhost:8080
 info:
   contact: {}
@@ -239,384 +71,84 @@ info:
   title: Backend service GoPVZ
   version: 1.0.0
 paths:
-  /dummyLogin123:
+  /dummyLogin:
     post:
       consumes:
       - application/json
+      description: Генерирует токен без проверки пароля (для тестирования)
       parameters:
-      - description: Данные для входа (role и user_id)
-        in: body
-        name: dummyLoginRequest
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.DummyLoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Успешная генерация токена
-          schema:
-            $ref: '#/definitions/handlers.DummyLoginResponse'
-        "400":
-          description: Некорректный запрос
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешён
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      summary: Получение тестового токена
-      tags:
-      - Public
-  /login:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Данные для входа
-        in: body
-        name: loginRequest
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Успешная авторизация
-          schema:
-            $ref: '#/definitions/handlers.LoginResponse'
-        "400":
-          description: Неверный запрос
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "401":
-          description: Неверный email или пароль
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешён
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      summary: Авторизация пользователя
-      tags:
-      - Public
-  /products:
-    post:
-      consumes:
-      - application/json
-      description: Добавляет новый товар в текущую открытую приемку для указанного
-        ПВЗ
-      parameters:
-      - description: Данные товара
+      - description: Роль пользователя
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/handlers.ProductRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Товар успешно добавлен
-          schema:
-            $ref: '#/definitions/handlers.ProductResponse'
-        "400":
-          description: Неверный запрос
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "401":
-          description: Нет открытой приемки для указанного ПВЗ
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "403":
-          description: Доступ запрещен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      - BearerAuth: []
-      summary: Добавление товара в текущую приемку (только для сотрудников ПВЗ)
-      tags:
-      - Protected
-  /pvz:
-    post:
-      consumes:
-      - application/json
-      description: Создает новый пункт выдачи заказов в указанном городе
-      parameters:
-      - description: Данные для создания ПВЗ
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.PVZRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: ПВЗ успешно создан
-          schema:
-            $ref: '#/definitions/handlers.PVZResponse'
-        "400":
-          description: Неверный запрос
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "401":
-          description: Ошибка авторизации
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "403":
-          description: Доступ запрещен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Создание ПВЗ (только для модераторов)
-      tags:
-      - Protected
-  /pvz/{pvzId}/close_last_reception:
-    post:
-      consumes:
-      - application/json
-      description: Закрывает последнюю открытую приемку для указанного ПВЗ (меняет
-        статус на "closed")
-      parameters:
-      - description: ID пункта выдачи заказов (ПВЗ)
-        in: path
-        name: pvzId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Приемка успешно закрыта
-          schema:
-            $ref: '#/definitions/handlers.CloseLastReceptionResponse'
-        "400":
-          description: Некорректный путь запроса
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "403":
-          description: Доступ запрещен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "404":
-          description: Не найдено открытой приемки для данного ПВЗ
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешен (разрешен только POST)
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Закрытие последней открытой приемки товаров в рамках ПВЗ (только для
-        сотрудников ПВЗ)
-      tags:
-      - Protected
-  /pvz/{pvzId}/delete_last_product:
-    post:
-      description: Удаляет самый последний добавленный товар (LIFO) (по дате) из открытой
-        приемки указанного ПВЗ
-      parameters:
-      - description: ID пункта выдачи заказов (ПВЗ)
-        in: path
-        name: pvzId
-        required: true
-        type: string
-      responses:
-        "200":
-          description: Товар успешно удален
-          schema:
-            type: string
-        "400":
-          description: Некорректный путь запроса
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "403":
-          description: Доступ запрещен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "404":
-          description: 'Не найдено: либо нет открытой приемки, либо нет товаров для
-            удаления'
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Удаление последнего добавленного товара из текущей приемки (LIFO, только
-        для сотрудников ПВЗ)
-      tags:
-      - Protected
-  /pvz/list:
-    get:
-      description: Возвращает список ПВЗ с вложенной информацией о приемках и товарах
-        за указанный период
-      parameters:
-      - description: Начальная дата диапазона (формат 2025-07-17T12:45:55.122Z)
-        in: query
-        name: startDate
-        type: string
-      - description: Конечная дата диапазона (формат 2025-07-17T12:45:55.122Z)
-        in: query
-        name: endDate
-        type: string
-      - description: Номер страницы (по умолчанию 1)
-        in: query
-        name: page
-        type: integer
-      - description: Количество элементов на странице (по умолчанию 10)
-        in: query
-        name: limit
-        type: integer
+          $ref: '#/definitions/GoPVZ_internal_dto.PostDummyLoginJSONBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.PVZWithReceptionsResponse'
-            type: array
+            $ref: '#/definitions/GoPVZ_internal_dto.TokenResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "403":
-          description: Доступ запрещен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией (только
-        для сотрудников или модераторов)
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      summary: Получение тестового токена
       tags:
-      - Protected
-  /receptions:
+      - auth
+  /login:
     post:
       consumes:
       - application/json
-      description: Создает новую приемку товаров для указанного ПВЗ. Требуется, чтобы
-        предыдущая приемка была закрыта.
+      description: Аутентификация пользователя по email и паролю
       parameters:
-      - description: Данные для создания приемки
+      - description: Данные для входа
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/handlers.ReceptionRequest'
+          $ref: '#/definitions/GoPVZ_internal_dto.PostLoginJSONBody'
       produces:
       - application/json
       responses:
-        "201":
-          description: Приемка успешно создана
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/handlers.ReceptionResponse'
+            $ref: '#/definitions/GoPVZ_internal_dto.TokenResponse'
         "400":
-          description: Неверный формат запроса
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "401":
-          description: Неверный PVZ ID или предыдущая приемка не закрыта
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "403":
-          description: Доступ запрещен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешен
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-      security:
-      - BearerAuth: []
-      - BearerAuth: []
-      summary: Создание новой приемки товаров (только для сотрудников ПВЗ)
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      summary: Вход в систему
       tags:
-      - Protected
+      - auth
   /register:
     post:
       consumes:
       - application/json
+      description: Регистрирует нового пользователя по email и паролю
       parameters:
       - description: Данные для регистрации
         in: body
-        name: registerRequest
+        name: input
         required: true
         schema:
-          $ref: '#/definitions/handlers.RegisterRequest'
+          $ref: '#/definitions/GoPVZ_internal_dto.PostRegisterJSONBody'
       produces:
       - application/json
       responses:
         "201":
-          description: Пользователь успешно зарегистрирован
+          description: Created
           schema:
-            $ref: '#/definitions/handlers.RegisterResponse'
+            $ref: '#/definitions/GoPVZ_internal_dto.User'
         "400":
-          description: Некорректный запрос или валидация
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "405":
-          description: Метод не разрешён
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "409":
-          description: Email уже зарегистрирован
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/helpers.ErrorResponse'
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
       summary: Регистрация пользователя
       tags:
-      - Public
+      - auth
 securityDefinitions:
   BearerAuth:
     description: JWT авторизация с Bearer схемой

@@ -1,10 +1,18 @@
 package main
 
-import "GoPVZ/internal/app"
+import (
+	"GoPVZ/config"
+	"GoPVZ/internal/app"
+	"log"
+)
 
 func main() {
+	// Configuration
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatalf("Config error: %s", err)
+	}
 
-	app.Run()
-
-	// TODO: реализовать gRPC сервер
+	// Run
+	app.Run(cfg)
 }

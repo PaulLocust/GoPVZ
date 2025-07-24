@@ -1,0 +1,35 @@
+# Ignore Go build artifacts and caches
+*.exe
+*.bin
+go.work
+go.work.sum
+
+# Ignore editor/IDE specific files
+.vscode/
+.idea/
+*.swp
+*.bak
+*~
+.DS_Store
+
+# Ignore version control files
+.git/
+.gitignore
+
+# Ignore logs and temporary files
+*.log
+tmp/
+temp/
+
+# Ignore Makefile
+Makefile
+
+# Ignore sensitive files (if applicable)
+.env
+config.local.json
+Dockerfile
+docker-compose.yaml
+
+# Test coverage data
+coverage-unit.out
+coverage-integration.out
