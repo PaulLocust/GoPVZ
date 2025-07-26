@@ -154,7 +154,7 @@ func TestRegisterHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.name == "duplicate email" {
-				_, err := handler.uc.Register(context.Background(), "duplicate@example.com", "password123", entity.RoleEmployee)
+				_, err := handler.uc.Register(context.Background(), "duplicate@example.com", "password123", string(entity.RoleEmployee))
 				require.NoError(t, err)
 			}
 
@@ -193,7 +193,7 @@ func TestLoginHandler(t *testing.T) {
 
 	email := "test@example.com"
 	password := "password123"
-	_, err := handler.uc.Register(context.Background(), email, password, entity.RoleEmployee)
+	_, err := handler.uc.Register(context.Background(), email, password, string(entity.RoleEmployee))
 	require.NoError(t, err)
 
 	tests := []struct {

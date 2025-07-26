@@ -13,15 +13,11 @@ all: test build
 # --- Testing Section ---
 .PHONY: test test-verbose coverage
 
-#./internal/product/usecase \
-#./internal/product/repo \
-#./internal/product/controller/http \
+
 #./internal/pvz/usecase \
 #./internal/pvz/repo \
 #./internal/pvz/controller/http \
-#./internal/reception/usecase \
-#./internal/reception/repo \
-#./internal/reception/controller/http \
+
 
 test:
 	@go test \

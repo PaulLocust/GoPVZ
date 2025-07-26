@@ -19,7 +19,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Domain auth"
                 ],
                 "summary": "Получение тестового токена",
                 "parameters": [
@@ -45,6 +45,12 @@
                         "schema": {
                             "$ref": "#/definitions/GoPVZ_internal_dto.Error"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
                     }
                 }
             }
@@ -59,7 +65,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Domain auth"
                 ],
                 "summary": "Вход в систему",
                 "parameters": [
@@ -85,6 +91,401 @@
                         "schema": {
                             "$ref": "#/definitions/GoPVZ_internal_dto.Error"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает запись о новом продукте в системе, привязывая его к указанному ПВЗ и приему",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domain pvz"
+                ],
+                "summary": "Добавление товара в текущую приемку (только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "description": "Данные для создания продукта",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.PostProductsJSONBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешно созданный продукт",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные входные данные",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/pvz": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список ПВЗ с информацией о приёмках и товарах с возможностью фильтрации по дате",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domain pvz"
+                ],
+                "summary": "Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией (только для сотрудников ПВЗ или модераторов)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Начальная дата диапазона (RFC3339)",
+                        "name": "startDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Конечная дата диапазона (RFC3339)",
+                        "name": "endDate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Количество элементов на странице",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список ПВЗ с приёмками и товарами",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/GoPVZ_internal_dto.PVZWithReceptions"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные параметры запроса",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет новый пункт выдачи заказов в систему",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domain pvz"
+                ],
+                "summary": "Создание ПВЗ (только для модераторов)",
+                "parameters": [
+                    {
+                        "description": "Данные для создания ПВЗ",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.PostPvzJSONRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "ПВЗ успешно создан",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.PVZ"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса или ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/pvz/{pvzId}/close_last_reception": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Закрывает активную приёмку товаров для указанного ПВЗ",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domain pvz"
+                ],
+                "summary": "Закрытие последней открытой приемки товаров в рамках ПВЗ (только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pvzId",
+                        "name": "pvzId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Приёмка успешно закрыта",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Reception"
+                        }
+                    },
+                    "400": {
+                        "description": "Нет активной приемки или другие ошибки валидации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/pvz/{pvzId}/delete_last_product": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет последний добавленный товар по принципу LIFO из активной приемки",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domain pvz"
+                ],
+                "summary": "Удаление последнего добавленного товара из текущей приемки (LIFO, только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pvzId",
+                        "name": "pvzId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Товар успешно удален"
+                    },
+                    "400": {
+                        "description": "Нет активной приемки или другие ошибки валидации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/receptions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новую запись о приеме в ПВЗ (пункте выдачи заказов) с указанным PVZ ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Domain pvz"
+                ],
+                "summary": "Создание новой приемки товаров (только для сотрудников ПВЗ)",
+                "parameters": [
+                    {
+                        "description": "Данные для создания записи приема",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.PostReceptionsJSONBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешно созданная запись приема",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Reception"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидные входные данные",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Ошибка авторизации",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
                     }
                 }
             }
@@ -99,7 +500,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Domain auth"
                 ],
                 "summary": "Регистрация пользователя",
                 "parameters": [
@@ -125,6 +526,12 @@
                         "schema": {
                             "$ref": "#/definitions/GoPVZ_internal_dto.Error"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/GoPVZ_internal_dto.Error"
+                        }
                     }
                 }
             }
@@ -136,6 +543,60 @@
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "GoPVZ_internal_dto.PVZ": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.PVZCity"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "registrationDate": {
+                    "type": "string"
+                }
+            }
+        },
+        "GoPVZ_internal_dto.PVZCity": {
+            "type": "string",
+            "enum": [
+                "Kazan",
+                "Moscow",
+                "Saint Petersburg"
+            ],
+            "x-enum-varnames": [
+                "PVZCityKazan",
+                "PVZCityMoscow",
+                "PVZCitySaintPetersburg"
+            ]
+        },
+        "GoPVZ_internal_dto.PVZRequestCity": {
+            "type": "string",
+            "enum": [
+                "Kazan",
+                "Moscow",
+                "Saint Petersburg"
+            ],
+            "x-enum-varnames": [
+                "PVZRequestCityKazan",
+                "PVZRequestCityMoscow",
+                "PVZRequestCitySaintPetersburg"
+            ]
+        },
+        "GoPVZ_internal_dto.PVZWithReceptions": {
+            "type": "object",
+            "properties": {
+                "pvz": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.PVZ"
+                },
+                "receptions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GoPVZ_internal_dto.ReceptionWithProducts"
+                    }
                 }
             }
         },
@@ -169,6 +630,46 @@
                 }
             }
         },
+        "GoPVZ_internal_dto.PostProductsJSONBody": {
+            "type": "object",
+            "properties": {
+                "pvzId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.PostProductsJSONBodyType"
+                }
+            }
+        },
+        "GoPVZ_internal_dto.PostProductsJSONBodyType": {
+            "type": "string",
+            "enum": [
+                "clothes",
+                "electronics",
+                "shoes"
+            ],
+            "x-enum-varnames": [
+                "PostProductsJSONBodyTypeClothes",
+                "PostProductsJSONBodyTypeElectronics",
+                "PostProductsJSONBodyTypeShoes"
+            ]
+        },
+        "GoPVZ_internal_dto.PostPvzJSONRequestBody": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.PVZRequestCity"
+                }
+            }
+        },
+        "GoPVZ_internal_dto.PostReceptionsJSONBody": {
+            "type": "object",
+            "properties": {
+                "pvzId": {
+                    "type": "string"
+                }
+            }
+        },
         "GoPVZ_internal_dto.PostRegisterJSONBody": {
             "type": "object",
             "properties": {
@@ -193,6 +694,78 @@
                 "Employee",
                 "Moderator"
             ]
+        },
+        "GoPVZ_internal_dto.Product": {
+            "type": "object",
+            "properties": {
+                "dateTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "receptionId": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.ProductType"
+                }
+            }
+        },
+        "GoPVZ_internal_dto.ProductType": {
+            "type": "string",
+            "enum": [
+                "clothes",
+                "electronics",
+                "shoes"
+            ],
+            "x-enum-varnames": [
+                "ProductTypeClothes",
+                "ProductTypeElectronics",
+                "ProductTypeShoes"
+            ]
+        },
+        "GoPVZ_internal_dto.Reception": {
+            "type": "object",
+            "properties": {
+                "dateTime": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pvzId": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.ReceptionStatus"
+                }
+            }
+        },
+        "GoPVZ_internal_dto.ReceptionStatus": {
+            "type": "string",
+            "enum": [
+                "close",
+                "in_progress"
+            ],
+            "x-enum-varnames": [
+                "Close",
+                "InProgress"
+            ]
+        },
+        "GoPVZ_internal_dto.ReceptionWithProducts": {
+            "type": "object",
+            "properties": {
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GoPVZ_internal_dto.Product"
+                    }
+                },
+                "reception": {
+                    "$ref": "#/definitions/GoPVZ_internal_dto.Reception"
+                }
+            }
         },
         "GoPVZ_internal_dto.TokenResponse": {
             "type": "object",
@@ -230,7 +803,7 @@
     },
     "securityDefinitions": {
         "BearerAuth": {
-            "description": "JWT авторизация с Bearer схемой",
+            "description": "Вставьте JWT токен с префиксом 'Bearer '. Пример: Bearer eyJhbGciOiJIUzI1NiIs...",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"

@@ -4,6 +4,10 @@ info:
   description: Сервис для управления ПВЗ и приемкой товаров
   version: 1.0.0
 
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
 components:
   schemas:
     TokenResponse:
@@ -28,19 +32,29 @@ components:
           enum: [employee, moderator]
       required: [email, role]
 
+    PVZ_Request:
+      type: object
+      properties:
+        city:
+          type: string
+          enum: [Moscow, Saint Petersburg, Kazan]
+      required: [city]
+
     PVZ:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         registrationDate:
           type: string
           format: date-time
+          example: "2025-07-17T12:15:49.386Z"
         city:
           type: string
           enum: [Moscow, Saint Petersburg, Kazan]
-      required: [city]
+      required: [id, registrationDate, city]
 
     Reception:
       type: object
@@ -48,16 +62,20 @@ components:
         id:
           type: string
           format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         dateTime:
           type: string
           format: date-time
+          example: "2025-07-17T12:15:49.386Z"
         pvzId:
           type: string
           format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         status:
           type: string
           enum: [in_progress, close]
-      required: [dateTime, pvzId, status]
+          example: in_progress
+      required: [id, dateTime, pvzId, status]
 
     Product:
       type: object
@@ -65,22 +83,54 @@ components:
         id:
           type: string
           format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         dateTime:
           type: string
           format: date-time
+          example: "2025-07-17T12:15:49.386Z"
         type:
           type: string
           enum: [electronics, clothes, shoes]
+          example: electronics
         receptionId:
           type: string
           format: uuid
-      required: [type, receptionId]
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required: [id, dateTime, type, receptionId]
+
+    PVZWithReceptions:
+      type: object
+      properties:
+        pvz:
+          $ref: '#/components/schemas/PVZ'
+        receptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceptionWithProducts'
+      required: [pvz, receptions]
+
+    ReceptionWithProducts:
+      type: object
+      properties:
+        reception:
+          $ref: '#/components/schemas/Reception'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+      required: [reception, products]
+
+    PVZListResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/PVZWithReceptions'
 
     Error:
       type: object
       properties:
         message:
           type: string
+          example: "Error description"
       required: [message]
 
   securitySchemes:
@@ -92,6 +142,7 @@ components:
 paths:
   /dummyLogin:
     post:
+      tags: [Authentication]
       summary: Получение тестового токена
       requestBody:
         required: true
@@ -103,6 +154,7 @@ paths:
                 role:
                   type: string
                   enum: [employee, moderator]
+                  example: employee
               required: [role]
       responses:
         '200':
@@ -120,6 +172,7 @@ paths:
 
   /register:
     post:
+      tags: [Authentication]
       summary: Регистрация пользователя
       requestBody:
         required: true
@@ -130,11 +183,14 @@ paths:
               properties:
                 email:
                   type: string
+                  example: user@example.com
                 password:
                   type: string
+                  example: securePassword123
                 role:
                   type: string
                   enum: [employee, moderator]
+                  example: employee
               required: [email, password, role]
       responses:
         '201':
@@ -152,6 +208,7 @@ paths:
 
   /login:
     post:
+      tags: [Authentication]
       summary: Авторизация пользователя
       requestBody:
         required: true
@@ -162,8 +219,10 @@ paths:
               properties:
                 email:
                   type: string
+                  example: user@example.com
                 password:
                   type: string
+                  example: securePassword123
               required: [email, password]
       responses:
         '200':
@@ -181,6 +240,7 @@ paths:
 
   /pvz:
     post:
+      tags: [PVZ]
       summary: Создание ПВЗ (только для модераторов)
       security:
         - bearerAuth: []
@@ -189,7 +249,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PVZ'
+              $ref: '#/components/schemas/PVZ_Request'
       responses:
         '201':
           description: ПВЗ создан
@@ -211,6 +271,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
     get:
+      tags: [PVZ]
       summary: Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией
       security:
         - bearerAuth: []
@@ -222,6 +283,7 @@ paths:
           schema:
             type: string
             format: date-time
+            example: "2025-01-01T00:00:00Z"
         - name: endDate
           in: query
           description: Конечная дата диапазона
@@ -229,6 +291,7 @@ paths:
           schema:
             type: string
             format: date-time
+            example: "2025-12-31T23:59:59Z"
         - name: page
           in: query
           description: Номер страницы
@@ -237,6 +300,7 @@ paths:
             type: integer
             minimum: 1
             default: 1
+            example: 1
         - name: limit
           in: query
           description: Количество элементов на странице
@@ -246,32 +310,30 @@ paths:
             minimum: 1
             maximum: 30
             default: 10
+            example: 10
       responses:
         '200':
-          description: Список ПВЗ
+          description: Список ПВЗ с приёмками и товарами
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    pvz:
-                      $ref: '#/components/schemas/PVZ'
-                    receptions:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          reception:
-                            $ref: '#/components/schemas/Reception'
-                          products:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/PVZListResponse'
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /pvz/{pvzId}/close_last_reception:
     post:
+      tags: [Receptions]
       summary: Закрытие последней открытой приемки товаров в рамках ПВЗ
       security:
         - bearerAuth: []
@@ -282,6 +344,7 @@ paths:
           schema:
             type: string
             format: uuid
+            example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       responses:
         '200':
           description: Приемка закрыта
@@ -302,9 +365,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
   /pvz/{pvzId}/delete_last_product:
     post:
+      tags: [Products]
       summary: Удаление последнего добавленного товара из текущей приемки (LIFO, только для сотрудников ПВЗ)
       security:
         - bearerAuth: []
@@ -315,6 +378,7 @@ paths:
           schema:
             type: string
             format: uuid
+            example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       responses:
         '200':
           description: Товар удален
@@ -333,6 +397,7 @@ paths:
 
   /receptions:
     post:
+      tags: [Receptions]
       summary: Создание новой приемки товаров (только для сотрудников ПВЗ)
       security:
         - bearerAuth: []
@@ -346,6 +411,7 @@ paths:
                 pvzId:
                   type: string
                   format: uuid
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
               required: [pvzId]
       responses:
         '201':
@@ -369,6 +435,7 @@ paths:
 
   /products:
     post:
+      tags: [Products]
       summary: Добавление товара в текущую приемку (только для сотрудников ПВЗ)
       security:
         - bearerAuth: []
@@ -382,9 +449,11 @@ paths:
                 type:
                   type: string
                   enum: [electronics, clothes, shoes]
+                  example: electronics
                 pvzId:
                   type: string
                   format: uuid
+                  example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
               required: [type, pvzId]
       responses:
         '201':

@@ -23,7 +23,24 @@ func NewAuthUseCase(r repo.UserRepository, jm *JwtManager) *AuthUseCase {
 	return &AuthUseCase{repo: r, jwtManager: jm}
 }
 
-func (uc *AuthUseCase) Register(ctx context.Context, email, password string, role entity.Role) (*entity.User, error) {
+func (uc *AuthUseCase) DummyLogin(ctx context.Context, role string) (string, error) {
+	if role != string(entity.RoleEmployee) && role != string(entity.RoleModerator) {
+		return "", pkgValidator.ErrInvalidRole
+	}
+
+	user := &entity.User{
+		ID:    uuid.New(),
+		Email: "dummy@pvz",
+		Role:  entity.Role(role),
+	}
+	return uc.jwtManager.GenerateToken(user)
+}
+
+func (uc *AuthUseCase) Register(ctx context.Context, email, password, role string) (*entity.User, error) {
+	if role != string(entity.RoleEmployee) && role != string(entity.RoleModerator) {
+		return nil, pkgValidator.ErrInvalidRole
+	}
+
 	if existing, _ := uc.repo.GetByEmail(ctx, email); existing != nil {
 		return nil, pkgValidator.ErrUserExists
 	}
@@ -37,7 +54,7 @@ func (uc *AuthUseCase) Register(ctx context.Context, email, password string, rol
 		ID:           uuid.New(),
 		Email:        email,
 		PasswordHash: string(hash),
-		Role:         role,
+		Role:         entity.Role(role),
 	}
 
 	if err := uc.repo.Create(ctx, user); err != nil {
@@ -53,19 +70,6 @@ func (uc *AuthUseCase) Login(ctx context.Context, email, password string) (strin
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return "", pkgValidator.ErrInvalidCredentials
-	}
-	return uc.jwtManager.GenerateToken(user)
-}
-
-func (uc *AuthUseCase) DummyLogin(ctx context.Context, role entity.Role) (string, error) {
-	if role != entity.RoleEmployee && role != entity.RoleModerator {
-		return "", pkgValidator.ErrInvalidRole
-	}
-
-	user := &entity.User{
-		ID:    uuid.New(),
-		Email: "dummy@pvz",
-		Role:  role,
 	}
 	return uc.jwtManager.GenerateToken(user)
 }

@@ -112,15 +112,15 @@ func TestAuthUseCase_Register(t *testing.T) {
 				mockRepo.On("Create", mock.Anything, mock.Anything).Return(tCase.repoError)
 			}
 
-			role := entity.Role(tCase.payload.Role)
-			user, err := uc.Register(context.Background(), string(tCase.payload.Email), tCase.payload.Password, role)
+	
+			user, err := uc.Register(context.Background(), string(tCase.payload.Email), tCase.payload.Password, string(tCase.payload.Role))
 
 			if tCase.wantError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, string(tCase.payload.Email), user.Email)
-				assert.Equal(t, role, user.Role)
+				assert.Equal(t, string(tCase.payload.Role), string(user.Role))
 			}
 			mockRepo.AssertExpectations(t)
 		})
@@ -253,7 +253,7 @@ func TestAuthUseCase_DummyLogin(t *testing.T) {
             jm := NewJwtManager("secret", 24*time.Hour)
             uc := NewAuthUseCase(mockRepo, jm)
 
-            token, err := uc.DummyLogin(context.Background(), tCase.role)
+            token, err := uc.DummyLogin(context.Background(), string(tCase.role))
 
             if tCase.wantError {
                 assert.Error(t, err)

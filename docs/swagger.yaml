@@ -5,6 +5,44 @@ definitions:
       message:
         type: string
     type: object
+  GoPVZ_internal_dto.PVZ:
+    properties:
+      city:
+        $ref: '#/definitions/GoPVZ_internal_dto.PVZCity'
+      id:
+        type: string
+      registrationDate:
+        type: string
+    type: object
+  GoPVZ_internal_dto.PVZCity:
+    enum:
+    - Kazan
+    - Moscow
+    - Saint Petersburg
+    type: string
+    x-enum-varnames:
+    - PVZCityKazan
+    - PVZCityMoscow
+    - PVZCitySaintPetersburg
+  GoPVZ_internal_dto.PVZRequestCity:
+    enum:
+    - Kazan
+    - Moscow
+    - Saint Petersburg
+    type: string
+    x-enum-varnames:
+    - PVZRequestCityKazan
+    - PVZRequestCityMoscow
+    - PVZRequestCitySaintPetersburg
+  GoPVZ_internal_dto.PVZWithReceptions:
+    properties:
+      pvz:
+        $ref: '#/definitions/GoPVZ_internal_dto.PVZ'
+      receptions:
+        items:
+          $ref: '#/definitions/GoPVZ_internal_dto.ReceptionWithProducts'
+        type: array
+    type: object
   GoPVZ_internal_dto.PostDummyLoginJSONBody:
     properties:
       role:
@@ -25,6 +63,33 @@ definitions:
       password:
         type: string
     type: object
+  GoPVZ_internal_dto.PostProductsJSONBody:
+    properties:
+      pvzId:
+        type: string
+      type:
+        $ref: '#/definitions/GoPVZ_internal_dto.PostProductsJSONBodyType'
+    type: object
+  GoPVZ_internal_dto.PostProductsJSONBodyType:
+    enum:
+    - clothes
+    - electronics
+    - shoes
+    type: string
+    x-enum-varnames:
+    - PostProductsJSONBodyTypeClothes
+    - PostProductsJSONBodyTypeElectronics
+    - PostProductsJSONBodyTypeShoes
+  GoPVZ_internal_dto.PostPvzJSONRequestBody:
+    properties:
+      city:
+        $ref: '#/definitions/GoPVZ_internal_dto.PVZRequestCity'
+    type: object
+  GoPVZ_internal_dto.PostReceptionsJSONBody:
+    properties:
+      pvzId:
+        type: string
+    type: object
   GoPVZ_internal_dto.PostRegisterJSONBody:
     properties:
       email:
@@ -42,6 +107,55 @@ definitions:
     x-enum-varnames:
     - Employee
     - Moderator
+  GoPVZ_internal_dto.Product:
+    properties:
+      dateTime:
+        type: string
+      id:
+        type: string
+      receptionId:
+        type: string
+      type:
+        $ref: '#/definitions/GoPVZ_internal_dto.ProductType'
+    type: object
+  GoPVZ_internal_dto.ProductType:
+    enum:
+    - clothes
+    - electronics
+    - shoes
+    type: string
+    x-enum-varnames:
+    - ProductTypeClothes
+    - ProductTypeElectronics
+    - ProductTypeShoes
+  GoPVZ_internal_dto.Reception:
+    properties:
+      dateTime:
+        type: string
+      id:
+        type: string
+      pvzId:
+        type: string
+      status:
+        $ref: '#/definitions/GoPVZ_internal_dto.ReceptionStatus'
+    type: object
+  GoPVZ_internal_dto.ReceptionStatus:
+    enum:
+    - close
+    - in_progress
+    type: string
+    x-enum-varnames:
+    - Close
+    - InProgress
+  GoPVZ_internal_dto.ReceptionWithProducts:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/GoPVZ_internal_dto.Product'
+        type: array
+      reception:
+        $ref: '#/definitions/GoPVZ_internal_dto.Reception'
+    type: object
   GoPVZ_internal_dto.TokenResponse:
     properties:
       token:
@@ -94,9 +208,13 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
       summary: Получение тестового токена
       tags:
-      - auth
+      - Domain auth
   /login:
     post:
       consumes:
@@ -120,9 +238,269 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
       summary: Вход в систему
       tags:
-      - auth
+      - Domain auth
+  /products:
+    post:
+      consumes:
+      - application/json
+      description: Создает запись о новом продукте в системе, привязывая его к указанному
+        ПВЗ и приему
+      parameters:
+      - description: Данные для создания продукта
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/GoPVZ_internal_dto.PostProductsJSONBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешно созданный продукт
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Product'
+        "400":
+          description: Невалидные входные данные
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "401":
+          description: Ошибка авторизации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      security:
+      - BearerAuth: []
+      summary: Добавление товара в текущую приемку (только для сотрудников ПВЗ)
+      tags:
+      - Domain pvz
+  /pvz:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список ПВЗ с информацией о приёмках и товарах с возможностью
+        фильтрации по дате
+      parameters:
+      - description: Начальная дата диапазона (RFC3339)
+        in: query
+        name: startDate
+        type: string
+      - description: Конечная дата диапазона (RFC3339)
+        in: query
+        name: endDate
+        type: string
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Количество элементов на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список ПВЗ с приёмками и товарами
+          schema:
+            items:
+              $ref: '#/definitions/GoPVZ_internal_dto.PVZWithReceptions'
+            type: array
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "401":
+          description: Ошибка авторизации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      security:
+      - BearerAuth: []
+      summary: Получение списка ПВЗ с фильтрацией по дате приемки и пагинацией (только
+        для сотрудников ПВЗ или модераторов)
+      tags:
+      - Domain pvz
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый пункт выдачи заказов в систему
+      parameters:
+      - description: Данные для создания ПВЗ
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/GoPVZ_internal_dto.PostPvzJSONRequestBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ПВЗ успешно создан
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.PVZ'
+        "400":
+          description: Неверный формат запроса или ошибка валидации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "401":
+          description: Ошибка авторизации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      security:
+      - BearerAuth: []
+      summary: Создание ПВЗ (только для модераторов)
+      tags:
+      - Domain pvz
+  /pvz/{pvzId}/close_last_reception:
+    post:
+      consumes:
+      - application/json
+      description: Закрывает активную приёмку товаров для указанного ПВЗ
+      parameters:
+      - description: pvzId
+        in: path
+        name: pvzId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Приёмка успешно закрыта
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Reception'
+        "400":
+          description: Нет активной приемки или другие ошибки валидации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "401":
+          description: Ошибка авторизации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      security:
+      - BearerAuth: []
+      summary: Закрытие последней открытой приемки товаров в рамках ПВЗ (только для
+        сотрудников ПВЗ)
+      tags:
+      - Domain pvz
+  /pvz/{pvzId}/delete_last_product:
+    post:
+      consumes:
+      - application/json
+      description: Удаляет последний добавленный товар по принципу LIFO из активной
+        приемки
+      parameters:
+      - description: pvzId
+        in: path
+        name: pvzId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Товар успешно удален
+        "400":
+          description: Нет активной приемки или другие ошибки валидации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "401":
+          description: Ошибка авторизации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      security:
+      - BearerAuth: []
+      summary: Удаление последнего добавленного товара из текущей приемки (LIFO, только
+        для сотрудников ПВЗ)
+      tags:
+      - Domain pvz
+  /receptions:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую запись о приеме в ПВЗ (пункте выдачи заказов) с указанным
+        PVZ ID
+      parameters:
+      - description: Данные для создания записи приема
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/GoPVZ_internal_dto.PostReceptionsJSONBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешно созданная запись приема
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Reception'
+        "400":
+          description: Невалидные входные данные
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "401":
+          description: Ошибка авторизации
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
+      security:
+      - BearerAuth: []
+      summary: Создание новой приемки товаров (только для сотрудников ПВЗ)
+      tags:
+      - Domain pvz
   /register:
     post:
       consumes:
@@ -146,12 +524,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/GoPVZ_internal_dto.Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/GoPVZ_internal_dto.Error'
       summary: Регистрация пользователя
       tags:
-      - auth
+      - Domain auth
 securityDefinitions:
   BearerAuth:
-    description: JWT авторизация с Bearer схемой
+    description: 'Вставьте JWT токен с префиксом ''Bearer ''. Пример: Bearer eyJhbGciOiJIUzI1NiIs...'
     in: header
     name: Authorization
     type: apiKey

@@ -7,7 +7,6 @@ import (
 	"GoPVZ/pkg/pkgValidator"
 )
 
-
 type DummyLoginValidator struct {
 	Payload dto.PostDummyLoginJSONBody
 }
@@ -17,14 +16,12 @@ func NewDummyLoginValidator(payload dto.PostDummyLoginJSONBody) *DummyLoginValid
 }
 
 func (v *DummyLoginValidator) Validate() error {
-	if v.Payload.Role != "employee" && v.Payload.Role != "moderator" {
+	if v.Payload.Role != dto.PostDummyLoginJSONBodyRoleEmployee && v.Payload.Role != dto.PostDummyLoginJSONBodyRoleModerator {
 		return pkgValidator.ErrInvalidRole
 	}
 
 	return nil
 }
-
-
 
 type RegisterValidator struct {
 	Payload dto.PostRegisterJSONBody
@@ -42,13 +39,12 @@ func (v *RegisterValidator) Validate() error {
 	if len(v.Payload.Password) < 8 {
 		return pkgValidator.ErrPasswordTooWeak
 	}
-	if v.Payload.Role != "employee" && v.Payload.Role != "moderator" {
+	if v.Payload.Role != dto.Employee && v.Payload.Role != dto.Moderator {
 		return pkgValidator.ErrInvalidRole
 	}
 
 	return nil
 }
-
 
 type LoginValidator struct {
 	Payload dto.PostLoginJSONBody
@@ -66,6 +62,6 @@ func (v *LoginValidator) Validate() error {
 	if len(v.Payload.Password) < 8 {
 		return pkgValidator.ErrPasswordTooWeak
 	}
-	
+
 	return nil
 }

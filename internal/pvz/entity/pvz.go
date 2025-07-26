@@ -19,3 +19,13 @@ type PVZ struct {
 	RegistrationDate time.Time `json:"registrationDate" db:"registration_date" example:"2025-07-17T12:15:49.386Z"`
 	City             City      `json:"city"             db:"city"              example:"Moscow"`
 }
+
+type PVZWithReceptions struct {
+	PVZ        *PVZ                     `json:"pvz"`
+	Receptions []*ReceptionWithProducts `json:"receptions"`
+}
+
+type ReceptionWithProducts struct {
+	Reception *Reception `json:"reception"`
+	Products  []*Product `json:"products"`
+}
