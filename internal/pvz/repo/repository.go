@@ -3,7 +3,9 @@ package repo
 import (
 	"GoPVZ/internal/pvz/entity"
 	"context"
+	"sort"
 	"time"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -61,14 +63,8 @@ func (r *pvzRepo) CreateProduct(ctx context.Context, product *entity.Product) er
 }
 
 func (r *pvzRepo) GetInProgressReceptionIdByPVZId(ctx context.Context, pvzId string) (string, error) {
-	var exists bool
-	err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM receptions WHERE pvz_id=$1 AND status=$2)`, pvzId, entity.StatusInProgress).Scan(&exists)
-	if err != nil {
-		return "", err
-	}
-	
 	var receptionId string
-	err = r.db.QueryRow(ctx, `SELECT id FROM receptions WHERE pvz_id=$1 AND status=$2`, pvzId, entity.StatusInProgress).Scan(&receptionId)
+	err := r.db.QueryRow(ctx, `SELECT id FROM receptions WHERE pvz_id=$1 AND status=$2`, pvzId, entity.StatusInProgress).Scan(&receptionId)
 	if err != nil {
 		return "", err
 	}
@@ -76,14 +72,14 @@ func (r *pvzRepo) GetInProgressReceptionIdByPVZId(ctx context.Context, pvzId str
 }
 
 func (r *pvzRepo) DeleteLastProductFromReception(ctx context.Context, pvzId string) error {
-    // Получаем ID активной приёмки
-    receptionId, err := r.GetInProgressReceptionIdByPVZId(ctx, pvzId)
-    if err != nil {
-        return err
-    }
+	// Получаем ID активной приёмки
+	receptionId, err := r.GetInProgressReceptionIdByPVZId(ctx, pvzId)
+	if err != nil {
+		return err
+	}
 
-    // Удаляем последний добавленный товар для этой приёмки
-    _, err = r.db.Exec(ctx, `
+	// Удаляем последний добавленный товар для этой приёмки
+	_, err = r.db.Exec(ctx, `
         DELETE FROM products 
         WHERE id = (
             SELECT id FROM products 
@@ -91,118 +87,157 @@ func (r *pvzRepo) DeleteLastProductFromReception(ctx context.Context, pvzId stri
             ORDER BY date_time DESC 
             LIMIT 1
         )`, receptionId)
-    
-    return err
+
+	return err
 }
 
 func (r *pvzRepo) CloseReception(ctx context.Context, pvzId string) (*entity.Reception, error) {
-    // Получаем ID активной приёмки
-    receptionId, err := r.GetInProgressReceptionIdByPVZId(ctx, pvzId)
-    if err != nil {
-        return nil, err
-    }
-
-    // Обновляем статус приёмки на "close"
-    _, err = r.db.Exec(ctx, `
-        UPDATE receptions 
-        SET status = $1 
-        WHERE id = $2 AND status = $3`,
-        entity.StatusClose, receptionId, entity.StatusInProgress)
-    if err != nil {
-        return nil, err
-    }
-
-    // Получаем обновлённую запись приёмки
-    var reception entity.Reception
-    err = r.db.QueryRow(ctx, `
-        SELECT id, pvz_id, date_time, status 
-        FROM receptions 
-        WHERE id = $1`, receptionId).Scan(
-        &reception.ID, &reception.PvzID, &reception.DateTime, &reception.Status)
-    if err != nil {
-        return nil, err
-    }
-
-    return &reception, nil
-}
-
-
-func (r *pvzRepo) GetPVZsWithReceptions(ctx context.Context, startDate, endDate *time.Time, limit, offset int) ([]*entity.PVZWithReceptions, error) {
-	query := `
-		WITH filtered_receptions AS (
-			SELECT * FROM receptions
-			WHERE ($1::timestamp IS NULL OR date_time >= $1)
-			AND ($2::timestamp IS NULL OR date_time <= $2)
-		)
-		SELECT 
-			p.id, p.registration_date, p.city,
-			r.id, r.pvz_id, r.date_time, r.status,
-			pr.id, pr.reception_id, pr.date_time, pr.type
-		FROM pvz p
-		LEFT JOIN filtered_receptions r ON p.id = r.pvz_id
-		LEFT JOIN products pr ON r.id = pr.reception_id
-		ORDER BY p.registration_date DESC, r.date_time DESC
-		LIMIT $3 OFFSET $4`
-
-	rows, err := r.db.Query(ctx, query, startDate, endDate, limit, offset)
+	// Получаем ID активной приёмки
+	receptionId, err := r.GetInProgressReceptionIdByPVZId(ctx, pvzId)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	pvzMap := make(map[uuid.UUID]*entity.PVZWithReceptions)
-	receptionMap := make(map[uuid.UUID]*entity.ReceptionWithProducts)
-
-	for rows.Next() {
-		var (
-			pvz       entity.PVZ
-			reception entity.Reception
-			product   entity.Product
-		)
-
-		err := rows.Scan(
-			&pvz.ID, &pvz.RegistrationDate, &pvz.City,
-			&reception.ID, &reception.PvzID, &reception.DateTime, &reception.Status,
-			&product.ID, &product.ReceptionID, &product.DateTime, &product.Type,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		// Если PVZ еще не в мапе, добавляем
-		if _, exists := pvzMap[pvz.ID]; !exists {
-			pvzMap[pvz.ID] = &entity.PVZWithReceptions{
-				PVZ:        &pvz,
-				Receptions: []*entity.ReceptionWithProducts{},
-			}
-		}
-
-		// Если есть reception и ее еще нет в мапе
-		if reception.ID != uuid.Nil {
-			if _, exists := receptionMap[reception.ID]; !exists {
-				receptionWithProducts := &entity.ReceptionWithProducts{
-					Reception: &reception,
-					Products:  []*entity.Product{},
-				}
-				receptionMap[reception.ID] = receptionWithProducts
-				pvzMap[pvz.ID].Receptions = append(pvzMap[pvz.ID].Receptions, receptionWithProducts)
-			}
-
-			// Если есть product, добавляем к соответствующей reception
-			if product.ID != uuid.Nil {
-				receptionMap[reception.ID].Products = append(
-					receptionMap[reception.ID].Products,
-					&product,
-				)
-			}
-		}
+	// Обновляем статус приёмки на "close"
+	_, err = r.db.Exec(ctx, `
+        UPDATE receptions 
+        SET status = $1 
+        WHERE id = $2 AND status = $3`,
+		entity.StatusClose, receptionId, entity.StatusInProgress)
+	if err != nil {
+		return nil, err
 	}
 
-	// Преобразуем мапу в слайс
-	result := make([]*entity.PVZWithReceptions, 0, len(pvzMap))
-	for _, pvzWithReceptions := range pvzMap {
-		result = append(result, pvzWithReceptions)
+	// Получаем обновлённую запись приёмки
+	var reception entity.Reception
+	err = r.db.QueryRow(ctx, `
+        SELECT id, pvz_id, date_time, status 
+        FROM receptions 
+        WHERE id = $1`, receptionId).Scan(
+		&reception.ID, &reception.PvzID, &reception.DateTime, &reception.Status)
+	if err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	return &reception, nil
+}
+
+func (r *pvzRepo) GetPVZsWithReceptions(ctx context.Context, startDate, endDate *time.Time, limit, offset int) ([]*entity.PVZWithReceptions, error) {
+    query := `
+        SELECT 
+            p.id AS pvz_id, 
+            p.registration_date AS pvz_registration_date, 
+            p.city AS pvz_city,
+            r.id AS reception_id, 
+            r.date_time AS reception_date, 
+            r.status AS reception_status,
+            pr.id AS product_id, 
+            pr.date_time AS product_date, 
+            pr.type AS product_type
+        FROM pvz p
+        LEFT JOIN receptions r ON p.id = r.pvz_id
+            AND ($1::timestamp IS NULL OR r.date_time >= $1)
+            AND ($2::timestamp IS NULL OR r.date_time <= $2)
+        LEFT JOIN products pr ON r.id = pr.reception_id
+        ORDER BY p.registration_date DESC, r.date_time DESC, pr.date_time DESC
+        LIMIT $3 OFFSET $4
+    `
+
+    rows, err := r.db.Query(ctx, query, startDate, endDate, limit, offset)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    pvzMap := make(map[uuid.UUID]*entity.PVZWithReceptions)
+    receptionMap := make(map[uuid.UUID]*entity.ReceptionWithProducts)
+
+    for rows.Next() {
+        var (
+            pvzID           uuid.UUID
+            pvzRegDate      time.Time
+            pvzCity         string
+            receptionID     *uuid.UUID
+            receptionDate   *time.Time
+            receptionStatus *string
+            productID       *uuid.UUID
+            productDate     *time.Time
+            productType     *string
+        )
+
+        err := rows.Scan(
+            &pvzID, &pvzRegDate, &pvzCity,
+            &receptionID, &receptionDate, &receptionStatus,
+            &productID, &productDate, &productType,
+        )
+        if err != nil {
+            return nil, err
+        }
+
+        // Обработка PVZ
+        if _, exists := pvzMap[pvzID]; !exists {
+            pvzMap[pvzID] = &entity.PVZWithReceptions{
+                PVZ: &entity.PVZ{
+                    ID:               pvzID,
+                    RegistrationDate: pvzRegDate,
+                    City:             entity.City(pvzCity),
+                },
+                Receptions: []*entity.ReceptionWithProducts{},
+            }
+        }
+
+        // Обработка Reception
+        if receptionID != nil {
+            if _, exists := receptionMap[*receptionID]; !exists {
+                reception := &entity.Reception{
+                    ID:       *receptionID,
+                    PvzID:    pvzID,
+                    DateTime: *receptionDate,
+                    Status:   entity.Status(*receptionStatus),
+                }
+                receptionWithProducts := &entity.ReceptionWithProducts{
+                    Reception: reception,
+                    Products:  []*entity.Product{},
+                }
+                receptionMap[*receptionID] = receptionWithProducts
+                pvzMap[pvzID].Receptions = append(pvzMap[pvzID].Receptions, receptionWithProducts)
+            }
+
+            // Обработка Product
+            if productID != nil {
+                product := &entity.Product{
+                    ID:          *productID,
+                    ReceptionID: *receptionID,
+                    DateTime:    *productDate,
+                    Type:        entity.Type(*productType),
+                }
+                receptionMap[*receptionID].Products = append(receptionMap[*receptionID].Products, product)
+            }
+        }
+    }
+
+    // Преобразование map в slice с сохранением порядка
+    result := make([]*entity.PVZWithReceptions, 0, len(pvzMap))
+    for _, pvz := range pvzMap {
+        // Сортируем приемки по дате (DESC)
+        sort.Slice(pvz.Receptions, func(i, j int) bool {
+            return pvz.Receptions[i].Reception.DateTime.After(pvz.Receptions[j].Reception.DateTime)
+        })
+        
+        // Сортируем товары внутри каждой приемки по дате (DESC)
+        for _, rec := range pvz.Receptions {
+            sort.Slice(rec.Products, func(i, j int) bool {
+                return rec.Products[i].DateTime.After(rec.Products[j].DateTime)
+            })
+        }
+        
+        result = append(result, pvz)
+    }
+
+    // Сортируем ПВЗ по дате регистрации (DESC)
+    sort.Slice(result, func(i, j int) bool {
+        return result[i].PVZ.RegistrationDate.After(result[j].PVZ.RegistrationDate)
+    })
+
+    return result, nil
 }

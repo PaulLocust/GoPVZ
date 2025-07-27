@@ -225,24 +225,22 @@ func (h *PVZHandler) CloseReception(c *gin.Context) {
 // @Security BearerAuth
 // @Router /pvz [get]
 func (h *PVZHandler) GetPVZsWithReceptions(c *gin.Context) {
-    // Получаем параметры запроса
+    // Получаем и валидируем параметры
     startDate := c.Query("startDate")
     endDate := c.Query("endDate")
     pageStr := c.DefaultQuery("page", "1")
     limitStr := c.DefaultQuery("limit", "10")
 
-    // Валидация параметров
     validator := validation.NewPVZsFilterValidator(startDate, endDate, pageStr, limitStr)
     if err := validator.Validate(); err != nil {
         c.JSON(http.StatusBadRequest, dto.Error{Message: err.Error()})
         return
     }
 
-    // Парсинг параметров
+    // Преобразуем параметры
     page, _ := strconv.Atoi(pageStr)
     limit, _ := strconv.Atoi(limitStr)
 
-    // Парсинг дат
     var startTime, endTime *time.Time
     if startDate != "" {
         st, _ := time.Parse(time.RFC3339, startDate)
@@ -253,49 +251,51 @@ func (h *PVZHandler) GetPVZsWithReceptions(c *gin.Context) {
         endTime = &et
     }
 
-    // Получаем данные из usecase
-    entities, err := h.uc.GetPVZsWithReceptions(c, startTime, endTime, page, limit)
+    // Получаем данные
+    pvzs, err := h.uc.GetPVZsWithReceptions(c, startTime, endTime, page, limit)
     if err != nil {
         c.JSON(http.StatusInternalServerError, dto.Error{Message: err.Error()})
         return
     }
 
-    // Преобразование entity в DTO
-    response := make([]dto.PVZWithReceptions, len(entities))
-    for i, pvzEntity := range entities {
-        // Преобразование ReceptionWithProducts
-        receptionsDTO := make([]dto.ReceptionWithProducts, len(pvzEntity.Receptions))
-        for j, receptionEntity := range pvzEntity.Receptions {
-            // Преобразование Products
-            productsDTO := make([]dto.Product, len(receptionEntity.Products))
-            for k, productEntity := range receptionEntity.Products {
-                productsDTO[k] = dto.Product{
-                    Id:          productEntity.ID,
-                    ReceptionId: productEntity.ReceptionID,
-                    DateTime:    productEntity.DateTime,
-                    Type:        dto.ProductType(productEntity.Type),
-                }
+    // Формируем ответ в требуемом формате
+    response := make([]dto.PVZWithReceptions, 0, len(pvzs))
+    for _, pvz := range pvzs {
+        receptions := make([]dto.ReceptionWithProducts, 0, len(pvz.Receptions))
+        
+        for _, reception := range pvz.Receptions {
+            // Создаем products для текущей reception
+            products := make([]dto.Product, 0, len(reception.Products))
+            for _, product := range reception.Products {
+                products = append(products, dto.Product{
+                    Id:          product.ID,
+                    ReceptionId: product.ReceptionID,
+                    DateTime:    product.DateTime.UTC(),
+                    Type:        dto.ProductType(product.Type),
+                })
             }
 
-            receptionsDTO[j] = dto.ReceptionWithProducts{
+            // Формируем reception с products
+            receptions = append(receptions, dto.ReceptionWithProducts{
                 Reception: dto.Reception{
-                    Id:       receptionEntity.Reception.ID,
-                    PvzId:    receptionEntity.Reception.PvzID,
-                    DateTime: receptionEntity.Reception.DateTime,
-                    Status:   dto.ReceptionStatus(receptionEntity.Reception.Status),
+                    Id:       reception.Reception.ID,
+                    PvzId:    reception.Reception.PvzID,
+                    DateTime: reception.Reception.DateTime.UTC(),
+                    Status:   dto.ReceptionStatus(reception.Reception.Status),
                 },
-                Products: productsDTO,
-            }
+                Products: products,
+            })
         }
 
-        response[i] = dto.PVZWithReceptions{
+        // Формируем PVZ с receptions
+        response = append(response, dto.PVZWithReceptions{
             Pvz: dto.PVZ{
-                Id:               pvzEntity.PVZ.ID,
-                RegistrationDate: pvzEntity.PVZ.RegistrationDate,
-                City:             dto.PVZCity(pvzEntity.PVZ.City),
+                Id:               pvz.PVZ.ID,
+                RegistrationDate: pvz.PVZ.RegistrationDate.UTC(),
+                City:             dto.PVZCity(pvz.PVZ.City),
             },
-            Receptions: receptionsDTO,
-        }
+            Receptions: receptions,
+        })
     }
 
     c.JSON(http.StatusOK, response)

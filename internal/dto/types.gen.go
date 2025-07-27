@@ -121,8 +121,8 @@ type ReceptionStatus string
 
 // ReceptionWithProducts defines model for ReceptionWithProducts.
 type ReceptionWithProducts struct {
-	Products  []Product `json:"products"`
 	Reception Reception `json:"reception"`
+	Products  []Product `json:"products"`
 }
 
 // TokenResponse defines model for TokenResponse.

@@ -18,4 +18,5 @@ var (
 	ErrInvalidLimit             = errors.New("limit must be between 1 and 30")
 	ErrInvalidDateFormat        = errors.New("date must be in RFC3339 format")
 	ErrInvalidDateRange         = errors.New("end date must be after start date")
+	ErrLimitTooHigh = errors.New("limit cannot be higher than 30")
 )

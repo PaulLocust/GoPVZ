@@ -5,6 +5,7 @@ import (
 	"GoPVZ/internal/pvz/repo"
 	"GoPVZ/pkg/pkgValidator"
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -71,7 +72,6 @@ func (uc *PVZUseCase) CreateProduct(ctx context.Context, productType, pvzId stri
 		return nil, err
 	}
 
-
 	product := &entity.Product{
 		ID:          uuid.New(),
 		ReceptionID: receptionUUID,
@@ -86,39 +86,48 @@ func (uc *PVZUseCase) CreateProduct(ctx context.Context, productType, pvzId stri
 }
 
 func (uc *PVZUseCase) DeleteLastProduct(ctx context.Context, pvzId string) error {
-    // Проверяем, есть ли активная приёмка
-    isInProgress, err := uc.repo.CheckPvzsLastReceptionStatusInProgress(ctx, pvzId)
-    if err != nil {
-        return err
-    }
-    if !isInProgress {
-        return pkgValidator.ErrNoActiveReception
-    }
+	// Проверяем, есть ли активная приёмка
+	isInProgress, err := uc.repo.CheckPvzsLastReceptionStatusInProgress(ctx, pvzId)
+	if err != nil {
+		return err
+	}
+	if !isInProgress {
+		return pkgValidator.ErrNoActiveReception
+	}
 
-    return uc.repo.DeleteLastProductFromReception(ctx, pvzId)
+	return uc.repo.DeleteLastProductFromReception(ctx, pvzId)
 }
 
 func (uc *PVZUseCase) CloseReception(ctx context.Context, pvzId string) (*entity.Reception, error) {
-    // Проверяем, есть ли активная приёмка
-    isInProgress, err := uc.repo.CheckPvzsLastReceptionStatusInProgress(ctx, pvzId)
-    if err != nil {
-        return nil, err
-    }
-    if !isInProgress {
-        return nil, pkgValidator.ErrNoActiveReception
-    }
+	// Проверяем, есть ли активная приёмка
+	isInProgress, err := uc.repo.CheckPvzsLastReceptionStatusInProgress(ctx, pvzId)
+	if err != nil {
+		return nil, err
+	}
+	if !isInProgress {
+		return nil, pkgValidator.ErrNoActiveReception
+	}
 
-    return uc.repo.CloseReception(ctx, pvzId)
+	return uc.repo.CloseReception(ctx, pvzId)
 }
 
 func (uc *PVZUseCase) GetPVZsWithReceptions(ctx context.Context, startDate, endDate *time.Time, page, limit int) ([]*entity.PVZWithReceptions, error) {
+	// Валидация параметров пагинации
 	if page < 1 {
 		page = 1
 	}
+
 	if limit < 1 || limit > 30 {
 		limit = 10
 	}
+
 	offset := (page - 1) * limit
 
+	// Дополнительная валидация дат (если обе даты указаны)
+	if startDate != nil && endDate != nil && startDate.After(*endDate) {
+		return nil, errors.New("startDate cannot be after endDate")
+	}
+
+	// Вызов репозитория с валидированными параметрами
 	return uc.repo.GetPVZsWithReceptions(ctx, startDate, endDate, limit, offset)
 }

@@ -133,15 +133,24 @@ func NewPVZsFilterValidator(startDate, endDate, pageStr, limitStr string) *PVZsF
 
 func (v *PVZsFilterValidator) Validate() error {
 	// Валидация page
-	page, err := strconv.Atoi(v.PageStr)
-	if err != nil || page < 1 {
+	if _, err := strconv.Atoi(v.PageStr); err != nil {
+		return pkgValidator.ErrInvalidPage
+	}
+	page, _ := strconv.Atoi(v.PageStr) // Безопасно, так как ошибка уже проверена
+	if page < 1 {
 		return pkgValidator.ErrInvalidPage
 	}
 
 	// Валидация limit
-	limit, err := strconv.Atoi(v.LimitStr)
-	if err != nil || limit < 1 || limit > 30 {
+	if _, err := strconv.Atoi(v.LimitStr); err != nil {
 		return pkgValidator.ErrInvalidLimit
+	}
+	limit, _ := strconv.Atoi(v.LimitStr) // Безопасно, так как ошибка уже проверена
+	if limit < 1 {
+		return pkgValidator.ErrInvalidLimit
+	}
+	if limit > 30 { 
+		return pkgValidator.ErrLimitTooHigh
 	}
 
 	// Валидация дат

@@ -18,4 +18,5 @@ type PVZRepository interface {
 	DeleteLastProductFromReception(ctx context.Context, pvzId string) error
 	CloseReception(ctx context.Context, pvzId string) (*entity.Reception, error)
 	GetPVZsWithReceptions(ctx context.Context, startDate, endDate *time.Time, limit, offset int) ([]*entity.PVZWithReceptions, error)
+
 }

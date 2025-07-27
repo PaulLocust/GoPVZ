@@ -14,9 +14,8 @@ all: test build
 .PHONY: test test-verbose coverage
 
 
-#./internal/pvz/usecase \
-#./internal/pvz/repo \
-#./internal/pvz/controller/http \
+
+
 
 
 test:
@@ -24,6 +23,9 @@ test:
 		./internal/auth/usecase \
 		./internal/auth/repo \
 		./internal/auth/controller/http \
+		./internal/pvz/usecase \
+		./internal/pvz/repo \
+		./internal/pvz/controller/http \
 		-coverprofile=coverage.out
 
 test-verbose:
@@ -31,6 +33,9 @@ test-verbose:
 		./internal/auth/usecase \
 		./internal/auth/repo \
 		./internal/auth/controller/http \
+		./internal/pvz/usecase \
+		./internal/pvz/repo \
+		./internal/pvz/controller/http \
 		-coverprofile=coverage.out
 
 coverage:
