@@ -4,6 +4,7 @@ import (
 	"GoPVZ/internal/pvz/entity"
 	"GoPVZ/internal/pvz/repo"
 	"GoPVZ/pkg/pkgValidator"
+	"GoPVZ/pkg/pkgMetrics"
 	"context"
 	"errors"
 	"time"
@@ -20,7 +21,6 @@ func NewPVZUseCase(r repo.PVZRepository) *PVZUseCase {
 }
 
 func (uc *PVZUseCase) CreatePVZ(ctx context.Context, city string) (*entity.PVZ, error) {
-
 	pvz := &entity.PVZ{
 		ID:               uuid.New(),
 		RegistrationDate: time.Now().UTC(),
@@ -30,6 +30,9 @@ func (uc *PVZUseCase) CreatePVZ(ctx context.Context, city string) (*entity.PVZ, 
 	if err := uc.repo.CreatePVZ(ctx, pvz); err != nil {
 		return nil, err
 	}
+
+	// Метрика: количество созданных ПВЗ
+	pkgMetrics.PVZCreatedTotal.Inc()
 	return pvz, nil
 }
 
@@ -52,12 +55,15 @@ func (uc *PVZUseCase) CreateReception(ctx context.Context, pvzId string) (*entit
 		ID:       uuid.New(),
 		PvzID:    pvzUUID,
 		DateTime: time.Now().UTC(),
-		Status:   entity.StatusInProgress, // Устанавливаем статус по умолчанию
+		Status:   entity.StatusInProgress,
 	}
 
 	if err := uc.repo.CreateReception(ctx, reception); err != nil {
 		return nil, err
 	}
+
+	// Метрика: количество созданных приемок
+	pkgMetrics.ReceptionsCreatedTotal.Inc()
 	return reception, nil
 }
 
@@ -82,11 +88,13 @@ func (uc *PVZUseCase) CreateProduct(ctx context.Context, productType, pvzId stri
 	if err := uc.repo.CreateProduct(ctx, product); err != nil {
 		return nil, err
 	}
+
+	// Метрика: количество добавленных товаров
+	pkgMetrics.ProductsAddedTotal.Inc()
 	return product, nil
 }
 
 func (uc *PVZUseCase) DeleteLastProduct(ctx context.Context, pvzId string) error {
-	// Проверяем, есть ли активная приёмка
 	isInProgress, err := uc.repo.CheckPvzsLastReceptionStatusInProgress(ctx, pvzId)
 	if err != nil {
 		return err
@@ -99,7 +107,6 @@ func (uc *PVZUseCase) DeleteLastProduct(ctx context.Context, pvzId string) error
 }
 
 func (uc *PVZUseCase) CloseReception(ctx context.Context, pvzId string) (*entity.Reception, error) {
-	// Проверяем, есть ли активная приёмка
 	isInProgress, err := uc.repo.CheckPvzsLastReceptionStatusInProgress(ctx, pvzId)
 	if err != nil {
 		return nil, err
@@ -112,7 +119,6 @@ func (uc *PVZUseCase) CloseReception(ctx context.Context, pvzId string) (*entity
 }
 
 func (uc *PVZUseCase) GetPVZsWithReceptions(ctx context.Context, startDate, endDate *time.Time, page, limit int) ([]*entity.PVZWithReceptions, error) {
-	// Валидация параметров пагинации
 	if page < 1 {
 		page = 1
 	}
@@ -121,13 +127,9 @@ func (uc *PVZUseCase) GetPVZsWithReceptions(ctx context.Context, startDate, endD
 		limit = 10
 	}
 
-	offset := (page - 1) * limit
-
-	// Дополнительная валидация дат (если обе даты указаны)
 	if startDate != nil && endDate != nil && startDate.After(*endDate) {
 		return nil, errors.New("startDate cannot be after endDate")
 	}
 
-	// Вызов репозитория с валидированными параметрами
-	return uc.repo.GetPVZsWithReceptions(ctx, startDate, endDate, limit, offset)
+	return uc.repo.GetPVZsWithReceptions(ctx, startDate, endDate, limit, (page-1)*limit)
 }

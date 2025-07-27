@@ -8,16 +8,21 @@ import (
 
 type (
 	Config struct {
-		Log   Log
-		DB    DB
-		HTTP  HTTP
-		GRPC  GRPC
-		JWT   JWT
-		PGURL PGURL
+		Log        Log
+		DB         DB
+		HTTP       HTTP
+		GRPC       GRPC
+		Prometheus Prometheus
+		JWT        JWT
+		PGURL      PGURL
 	}
 
 	HTTP struct {
 		Port string `env:"HTTP_PORT" envDefault:"8080"`
+	}
+
+	Prometheus struct {
+		Port string `env:"PROMETHEUS_PORT" envDefault:"9000"`
 	}
 
 	GRPC struct {

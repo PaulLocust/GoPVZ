@@ -12,14 +12,18 @@ import (
 	domainPvzUsecase "GoPVZ/internal/pvz/usecase"
 	"GoPVZ/pkg/pkgHttpserver"
 	"GoPVZ/pkg/pkgLogger"
+	"GoPVZ/pkg/pkgMetrics"
 	"GoPVZ/pkg/pkgPostgres"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -38,9 +42,8 @@ import (
 // @name Authorization
 // @description Вставьте JWT токен с префиксом 'Bearer '. Пример: Bearer eyJhbGciOiJIUzI1NiIs...
 func Run(cfg *config.Config) {
-
 	log := pkgLogger.New("local")
-	log.Info("Starting application", slog.Any("config", cfg))
+	log.Info("Starting application")
 
 	DBConn, err := pkgPostgres.New(cfg.PGURL.URL)
 	if err != nil {
@@ -49,6 +52,16 @@ func Run(cfg *config.Config) {
 	}
 	log.Info("Connected to PostgreSQL")
 
+	// Запуск сервера метрик Prometheus 
+	go func() {
+    	addr := ":" + cfg.Prometheus.Port // Используем порт из конфига
+    	http.Handle("/metrics", promhttp.Handler())
+    	log.Info("Prometheus metrics server started", slog.String("port", cfg.Prometheus.Port))
+		
+    	if err := http.ListenAndServe(addr, nil); err != nil {
+    	    log.Error("Metrics server error", pkgLogger.Err(err))
+    	}
+	}()
 
 	// auth domain
 	userRepo := domainAuthRepo.NewUserRepo(DBConn.Pool)
@@ -60,48 +73,64 @@ func Run(cfg *config.Config) {
 	pvzUC := domainPvzUsecase.NewPVZUseCase(pvzRepo)
 
 	// Создаем middleware
-    authMiddleware := domainAuthControllerHttp.JWTMiddleware(authUC.GetJwtManager())
-    employeeOnly := domainAuthControllerHttp.RolesMiddleware(userEntity.RoleEmployee)
-    moderatorOnly := domainAuthControllerHttp.RolesMiddleware(userEntity.RoleModerator)
-    employeeOrModerator := domainAuthControllerHttp.RolesMiddleware(userEntity.RoleEmployee, userEntity.RoleModerator)
+	authMiddleware := domainAuthControllerHttp.JWTMiddleware(authUC.GetJwtManager())
+	employeeOnly := domainAuthControllerHttp.RolesMiddleware(userEntity.RoleEmployee)
+	moderatorOnly := domainAuthControllerHttp.RolesMiddleware(userEntity.RoleModerator)
+	employeeOrModerator := domainAuthControllerHttp.RolesMiddleware(userEntity.RoleEmployee, userEntity.RoleModerator)
 
-	
 	server := pkgHttpserver.New(
 		pkgHttpserver.Port(cfg.HTTP.Port),
 		pkgHttpserver.ReadTimeout(10*time.Second),
 	)
 	router := server.GetRouter()
 
+	// Добавляем middleware для метрик
+	router.Use(func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		pkgMetrics.HttpRequestsTotal.WithLabelValues(
+			c.Request.Method,
+			c.Request.URL.Path,
+			strconv.Itoa(c.Writer.Status()),
+		).Inc()
+
+		pkgMetrics.HttpRequestDuration.WithLabelValues(
+			c.Request.Method,
+			c.Request.URL.Path,
+		).Observe(time.Since(start).Seconds())
+	})
+
 	registerRoutes(router, authUC, pvzUC, authMiddleware, employeeOnly, moderatorOnly, employeeOrModerator)
 	server.Start()
-	log.Info("Server started on port " + cfg.HTTP.Port)
+	log.Info("Server started on port ", slog.String("port", cfg.HTTP.Port))
 	waitForShutdown(server, log)
 }
 
+
 func registerRoutes(
-    router *gin.Engine, 
-    authUC *domainAuthUsecase.AuthUseCase,
-    pvzUC *domainPvzUsecase.PVZUseCase,
-    authMiddleware gin.HandlerFunc,
-    employeeOnly gin.HandlerFunc,
-    moderatorOnly gin.HandlerFunc,
-    employeeOrModerator gin.HandlerFunc,
+	router *gin.Engine,
+	authUC *domainAuthUsecase.AuthUseCase,
+	pvzUC *domainPvzUsecase.PVZUseCase,
+	authMiddleware gin.HandlerFunc,
+	employeeOnly gin.HandlerFunc,
+	moderatorOnly gin.HandlerFunc,
+	employeeOrModerator gin.HandlerFunc,
 ) {
-    api := router.Group("/")
-    
-    // Auth routes (public)
-    domainAuthControllerHttp.NewAuthRouter(api, authUC)
-    
-    // PVZ routes (protected)
-    domainPVZControllerHttp.NewPVZRouter(api, pvzUC, authMiddleware, employeeOnly, moderatorOnly, employeeOrModerator)
-    
-    // Swagger
+	api := router.Group("/")
+
+	// Auth routes (public)
+	domainAuthControllerHttp.NewAuthRouter(api, authUC)
+
+	// PVZ routes (protected)
+	domainPVZControllerHttp.NewPVZRouter(api, pvzUC, authMiddleware, employeeOnly, moderatorOnly, employeeOrModerator)
+
+	// Swagger
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	router.GET("/swagger", func(c *gin.Context) {
 		c.Redirect(302, "/swagger/index.html")
 	})
 }
-	
 
 func waitForShutdown(server *pkgHttpserver.Server, log *pkgLogger.Logger) {
 	quit := make(chan os.Signal, 1)

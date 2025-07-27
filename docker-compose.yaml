@@ -5,7 +5,8 @@ services:
       build: .
       container_name: avito-pvz-service
       ports:
-        - "8080:8080"
+        - "8080:8080"    # Основное приложение
+        - "9000:9000"    # Метрики Prometheus
       env_file:
         - .env
       depends_on:
@@ -22,7 +23,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${avito_pvz}
     volumes:
-      # "./migrations/init.sql" - путь к миграциям БД
       - ./migrations/000001_init.up.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -34,5 +34,17 @@ services:
       start_period: 10s
     networks:
       - internal
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - avito-pvz-service
+    networks:
+      - internal
+
 networks:
   internal:

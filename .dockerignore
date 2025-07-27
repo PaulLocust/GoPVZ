@@ -26,6 +26,7 @@ Makefile
 
 # Ignore sensitive files (if applicable)
 .env
+.env.example
 config.local.json
 Dockerfile
 docker-compose.yaml
