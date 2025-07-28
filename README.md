@@ -22,7 +22,7 @@ docker-compose up -d
 ```
 
 ## После запуска доступны:
-- 📚 http://localhost:8080/swagger API Documentation - основное место где можно поиграться с приложением
+- 📚 http://localhost:8080/swagger API Documentation - место где можно поиграться с приложением
 
 - 📊 http://localhost:9000/metrics Prometheus Metrics - сырые метрики prometheus
 
