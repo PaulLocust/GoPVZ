@@ -5,4 +5,4 @@ global:
 scrape_configs:
   - job_name: 'avito-pvz-service'
     static_configs:
-      - targets: ['avito-pvz-service:9000']  # Обращение к метрикам вашего сервиса внутри сети
+      - targets: ['avito-pvz-service:9000']

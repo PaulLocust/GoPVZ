@@ -136,7 +136,7 @@ func (v *PVZsFilterValidator) Validate() error {
 	if _, err := strconv.Atoi(v.PageStr); err != nil {
 		return pkgValidator.ErrInvalidPage
 	}
-	page, _ := strconv.Atoi(v.PageStr) // Безопасно, так как ошибка уже проверена
+	page, _ := strconv.Atoi(v.PageStr) 
 	if page < 1 {
 		return pkgValidator.ErrInvalidPage
 	}
@@ -145,7 +145,7 @@ func (v *PVZsFilterValidator) Validate() error {
 	if _, err := strconv.Atoi(v.LimitStr); err != nil {
 		return pkgValidator.ErrInvalidLimit
 	}
-	limit, _ := strconv.Atoi(v.LimitStr) // Безопасно, так как ошибка уже проверена
+	limit, _ := strconv.Atoi(v.LimitStr) 
 	if limit < 1 {
 		return pkgValidator.ErrInvalidLimit
 	}

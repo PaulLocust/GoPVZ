@@ -1,5 +1,3 @@
-# Makefile for GoPVZ project
-
 .env:
 	@touch .env
 
@@ -12,11 +10,6 @@ all: test build
 
 # --- Testing Section ---
 .PHONY: test test-verbose coverage
-
-
-
-
-
 
 test:
 	@go test \
